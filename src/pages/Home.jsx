@@ -17,7 +17,7 @@ export default function Home() {
           ) : (
             <>
               <Link className="btn" to="/register">Đăng ký</Link>
-              <Link className="btn ghost" to="/login">Đăng nhập</Link>
+              <Link className="btn" to="/login">Đăng nhập</Link>
             </>
           )}
         </div>
