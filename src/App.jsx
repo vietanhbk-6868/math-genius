@@ -6,12 +6,18 @@ import AuthPage from "./pages/AuthPage";
 import TeacherQuestionBank from "./pages/TeacherQuestionBank";
 import StudentTest from "./pages/StudentTest";
 import StudentReport from "./pages/StudentReport";
+import TeacherDashboard from "./pages/TeacherDashboard";
 function Navbar() {
   const { session, profile, signOut } = useAuth();
   return (
     <nav className="nav">
       <Link to="/" className="brand">MathGenius</Link>
-      {profile?.role === "teacher" && <NavLink to="/teacher">Ngân hàng câu hỏi</NavLink>}
+      {profile?.role === "teacher" && (
+  <>
+    <NavLink to="/teacher" end>Ngân hàng câu hỏi</NavLink>
+    <NavLink to="/teacher/dashboard">Tổng quan lớp</NavLink>
+  </>
+)}
       {profile?.role === "student" && (
   <>
     <NavLink to="/student" end>Làm bài</NavLink>
@@ -53,6 +59,7 @@ export default function App() {
           <Route path="/register" element={<AuthPage mode="register" />} />
           <Route path="/app" element={<RoleRedirect />} />
           <Route path="/teacher" element={<RequireRole role="teacher"><TeacherQuestionBank /></RequireRole>} />
+          <Route path="/teacher/dashboard" element={<RequireRole role="teacher"><TeacherDashboard /></RequireRole>} />
           <Route path="/student" element={<RequireRole role="student"><StudentTest /></RequireRole>} />
           <Route path="/student/report" element={<RequireRole role="student"><StudentReport /></RequireRole>} />
         </Routes>

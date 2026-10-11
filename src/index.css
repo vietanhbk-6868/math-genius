@@ -111,3 +111,16 @@ button.ghost { background: #eef1f8; color: #3a4357; }
 .aibox.good { background: #f1faf3; border-left: 4px solid #2f9e44; }
 .planitem { padding: 8px 0; border-bottom: 1px solid #eef1f8; }
 .planitem p { margin: 4px 0 0; }
+.page.wide { max-width: 1000px; }
+.row.between { justify-content: space-between; align-items: center; }
+.tablewrap { overflow-x: auto; }
+.tbl { width: 100%; border-collapse: collapse; font-size: 15px; }
+.tbl th { text-align: left; color: #5a6478; font-size: 13px; padding: 8px 10px; border-bottom: 1px solid #e1e6f0; }
+.tbl td { padding: 10px; border-bottom: 1px solid #eef1f8; vertical-align: top; }
+.tbl tr.clickable { cursor: pointer; }
+.tbl tr.clickable:hover { background: #f6f8fc; }
+.badge { padding: 3px 10px; border-radius: 999px; font-size: 13px; white-space: nowrap; }
+.badge.low { background: #fde8e8; color: #a12626; }
+.badge.mid { background: #fff3d6; color: #8a5a00; }
+.badge.high { background: #dcf5e3; color: #1d7a3a; }
+.badge.none { background: #eef1f8; color: #5a6478; }
