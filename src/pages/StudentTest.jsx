@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabase";
 import MathText from "../components/MathText";
 import { useAuth } from "../AuthContext";
+import { useLocation, Link } from "react-router-dom";
 const LETTERS = ["A", "B", "C", "D"];
 
 function shuffle(arr) {
@@ -15,6 +16,19 @@ function shuffle(arr) {
 
 export default function StudentTest() {
   const { session, profile } = useAuth();
+  const location = useLocation();
+const [mode, setMode] = useState("normal");
+
+useEffect(() => {
+  const rq = location.state?.remedial;
+  if (rq?.length) {
+    setQuestions(rq);
+    setChosen({});
+    setMode("remedial");
+    setStage("test");
+  }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, []);
   const [stage, setStage] = useState("setup"); // setup | test | result
   const [meta, setMeta] = useState([]);
   const [form, setForm] = useState({ name: "", grade: 8, topic: "", count: 10 });
@@ -76,8 +90,8 @@ export default function StudentTest() {
       .insert({
         student_name: profile.full_name,
         student_id: session.user.id,
-        grade: Number(form.grade),
-        topic: form.topic || null,
+        grade: mode === "remedial" ? (questions[0]?.grade ?? null) : Number(form.grade),
+        topic: mode === "remedial" ? "Bổ trợ" : form.topic || null,
         score,
         total: rows.length,
       })
@@ -162,7 +176,7 @@ export default function StudentTest() {
   if (stage === "test") {
     return (
       <div className="page">
-        <h1>Bài làm của {form.name}</h1>
+        <h1>{mode === "remedial" ? "Bài bổ trợ của " : "Bài làm của "}{profile.full_name}</h1>
         {questions.map((q, idx) => (
           <div className="card" key={q.id}>
             <p className="q">
@@ -228,7 +242,10 @@ export default function StudentTest() {
           </p>
         </div>
       ))}
-      <button onClick={() => setStage("setup")}>Làm bài khác</button>
+      <div className="row">
+  <button onClick={() => { setMode("normal"); setStage("setup"); }}>Làm bài khác</button>
+  <Link className="btn ghost" to="/student/report">Xem báo cáo</Link>
+</div>
     </div>
   );
 }

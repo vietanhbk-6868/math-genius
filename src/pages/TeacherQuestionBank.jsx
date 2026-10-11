@@ -82,6 +82,11 @@ export default function TeacherQuestionBank() {
 
   return (
     <div className="page">
+      <datalist id="skills">
+  {[...new Set(bank.map((q) => q.skill_tag).filter(Boolean))].map((t) => (
+    <option key={t} value={t} />
+  ))}
+</datalist>
       <h1>MathGenius · Ngân hàng câu hỏi</h1>
 
       <form className="card form" onSubmit={handleGenerate}>
@@ -142,7 +147,14 @@ export default function TeacherQuestionBank() {
               </ul>
               <p className="expl"><b>Lời giải:</b> <MathText text={d.explanation} /></p>
               <div className="row">
-                <span className="tag">{d.skill_tag}</span>
+                <label className="grow">
+  Kỹ năng
+  <input
+    list="skills"
+    value={d.skill_tag || ""}
+    onChange={(e) => updateDraft(d._id, { skill_tag: e.target.value })}
+  />
+</label>
                 <label>
                   Đáp án đúng
                   <select

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
 import { diagnose } from "../api";
 
@@ -14,18 +14,33 @@ function barClass(rate) {
   if (rate < 80) return "mid";
   return "high";
 }
+const ORDER = ["nhận biết", "thông hiểu", "vận dụng", "vận dụng cao"];
+const QUOTA = 4; // số câu tối đa cho mỗi kỹ năng
 
+function targetLevels(rate) {
+  if (rate < 50) return ["nhận biết", "thông hiểu"];
+  if (rate < 80) return ["vận dụng"];
+  return ["vận dụng cao"];
+}
+
+function levelDistance(level, targets) {
+  const idx = ORDER.indexOf(level);
+  if (idx < 0) return 9;
+  return Math.min(...targets.map((t) => Math.abs(idx - ORDER.indexOf(t))));
+}
 export default function StudentReport() {
   const [rows, setRows] = useState(null);
   const [error, setError] = useState("");
   const [ai, setAi] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
-
+  const navigate = useNavigate();
+const [plan, setPlan] = useState(null);
+const [planLoading, setPlanLoading] = useState(false);
   useEffect(() => {
     (async () => {
       const { data, error } = await supabase
         .from("answers")
-        .select("skill_tag, level, correct, attempt_id");
+        .select("skill_tag, level, correct, attempt_id, question_id");
       if (error) setError(error.message);
       else setRows(data);
     })();
@@ -69,7 +84,53 @@ export default function StudentReport() {
       setAiLoading(false);
     }
   }
+  async function buildPlan() {
+  setPlanLoading(true);
+  setError("");
+  try {
+    const picked = stats.filter((s) => s.skill_tag !== "Khác").slice(0, 3);
+    if (picked.length === 0) throw new Error("Chưa có kỹ năng nào để tạo bài bổ trợ.");
 
+    const correctIds = new Set(rows.filter((r) => r.correct && r.question_id).map((r) => r.question_id));
+    const seenIds = new Set(rows.filter((r) => r.question_id).map((r) => r.question_id));
+
+    const { data, error } = await supabase
+      .from("questions")
+      .select("*")
+      .eq("status", "approved")
+      .in("skill_tag", picked.map((s) => s.skill_tag));
+    if (error) throw new Error(error.message);
+
+    const items = picked.map((s) => {
+      const targets = targetLevels(s.rate);
+      const pool = data
+        .filter((q) => q.skill_tag === s.skill_tag && !correctIds.has(q.id))
+        .map((q) => ({
+          q,
+          d: levelDistance(q.level, targets),
+          seen: seenIds.has(q.id) ? 1 : 0,
+          r: Math.random(),
+        }))
+        .sort((a, b) => a.d - b.d || a.seen - b.seen || a.r - b.r);
+      return {
+        skill_tag: s.skill_tag,
+        rate: s.rate,
+        targets,
+        questions: pool.slice(0, QUOTA).map((x) => x.q),
+      };
+    });
+    setPlan(items);
+  } catch (e) {
+    setError(e.message);
+  } finally {
+    setPlanLoading(false);
+  }
+}
+
+function startRemedial() {
+  const questions = plan.flatMap((p) => p.questions);
+  navigate("/student", { state: { remedial: questions } });
+}
   if (!rows && !error) return <p className="page muted">Đang tải...</p>;
 
   if (rows && rows.length === 0) {
@@ -116,7 +177,35 @@ export default function StudentReport() {
           </div>
         ))}
       </div>
-
+        <h2>Bài tập bổ trợ</h2>
+{!plan && (
+  <button onClick={buildPlan} disabled={planLoading}>
+    {planLoading ? "Đang chọn bài..." : "Tạo bài bổ trợ cho tôi"}
+  </button>
+)}
+{plan && (
+  <div className="card">
+    {plan.map((p) => (
+      <div className="planitem" key={p.skill_tag}>
+        <b>{p.skill_tag}</b>
+        <p className="muted small">
+          Tỉ lệ đúng hiện tại {p.rate}% · Mức độ gợi ý: {p.targets.join(" / ")} · {p.questions.length} câu
+        </p>
+        {p.questions.length < QUOTA && (
+          <p className="muted small">
+            Ngân hàng chưa đủ câu cho kỹ năng này, hãy nhờ giáo viên bổ sung thêm.
+          </p>
+        )}
+      </div>
+    ))}
+    <div className="row">
+      <button onClick={startRemedial} disabled={plan.every((p) => p.questions.length === 0)}>
+        Bắt đầu làm bài bổ trợ ({plan.reduce((n, p) => n + p.questions.length, 0)} câu)
+      </button>
+      <button className="ghost" onClick={() => setPlan(null)}>Chọn lại</button>
+    </div>
+  </div>
+)}
       <h2>Nhận xét của AI</h2>
       {!ai && (
         <button onClick={runAI} disabled={aiLoading}>

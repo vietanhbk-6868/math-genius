@@ -109,3 +109,5 @@ button.ghost { background: #eef1f8; color: #3a4357; }
 .aibox p { margin: 4px 0; }
 .aibox.bad { background: #fff4f4; border-left: 4px solid #e03131; }
 .aibox.good { background: #f1faf3; border-left: 4px solid #2f9e44; }
+.planitem { padding: 8px 0; border-bottom: 1px solid #eef1f8; }
+.planitem p { margin: 4px 0 0; }
