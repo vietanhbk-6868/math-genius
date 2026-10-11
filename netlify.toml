@@ -1,0 +1,28 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+  SECRETS_SCAN_OMIT_KEYS = "VITE_SUPABASE_URL,VITE_SUPABASE_ANON_KEY"
+
+[dev]
+  command = "npm run dev"
+  targetPort = 5173
+
+# Các đường dẫn API (phải đặt TRƯỚC quy tắc chung bên dưới)
+[[redirects]]
+  from = "/api/questions/generate"
+  to = "/.netlify/functions/generate-questions"
+  status = 200
+
+[[redirects]]
+  from = "/api/diagnose"
+  to = "/.netlify/functions/diagnose"
+  status = 200
+
+# Cho phép tải lại trang ở /login, /student... không bị lỗi 404
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
