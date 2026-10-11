@@ -125,3 +125,195 @@ button.ghost { background: #eef1f8; color: #3a4357; }
 .badge.high { background: #dcf5e3; color: #1d7a3a; }
 .badge.none { background: #eef1f8; color: #5a6478; }
 .tabs { display: flex; gap: 8px; margin: 16px 0; }
+/* ===== Trang đăng nhập / đăng ký kiểu neon ===== */
+.auth-bg {
+  min-height: calc(100vh - 60px);
+  display: grid;
+  place-items: center;
+  padding: 32px 16px;
+  background:
+    radial-gradient(circle at 15% 20%, rgba(123, 47, 247, 0.28), transparent 45%),
+    radial-gradient(circle at 85% 80%, rgba(0, 229, 255, 0.22), transparent 45%),
+    #070b14;
+}
+
+/* Khung viền sáng chạy vòng quanh */
+.neon {
+  position: relative;
+  width: 100%;
+  max-width: 420px;
+  padding: 3px;
+  border-radius: 30px;
+  overflow: hidden;
+  box-shadow: 0 0 40px rgba(0, 229, 255, 0.35), 0 0 100px rgba(123, 47, 247, 0.3);
+}
+.neon::before {
+  content: "";
+  position: absolute;
+  inset: -60%;
+  background: conic-gradient(from 0deg, transparent 0 55%, #00e5ff 75%, #7b2ff7 90%, transparent);
+  animation: neon-spin 4s linear infinite;
+}
+@keyframes neon-spin { to { transform: rotate(360deg); } }
+
+/* Thẻ lật 3D */
+.flip {
+  position: relative;
+  z-index: 1;
+  perspective: 1400px;
+  background: #0b1220;
+  border-radius: 27px;
+}
+.flip-inner {
+  display: grid;
+  transform-style: preserve-3d;
+  transition: transform 0.8s cubic-bezier(0.4, 0.2, 0.2, 1);
+}
+.flip.is-register .flip-inner { transform: rotateY(180deg); }
+
+.face {
+  grid-area: 1 / 1;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 14px;
+  padding: 34px 30px;
+  visibility: visible;
+  transition: visibility 0s linear 0s;
+}
+.face.back { transform: rotateY(180deg); }
+.flip.is-register .front,
+.flip:not(.is-register) .back {
+  visibility: hidden;
+  transition-delay: 0.4s;
+}
+
+.neon-title {
+  margin: 0;
+  text-align: center;
+  color: #7df3ff;
+  font-size: 28px;
+  letter-spacing: 3px;
+  text-shadow: 0 0 10px #00e5ff, 0 0 28px rgba(0, 229, 255, 0.7);
+}
+.auth-sub { text-align: center; margin: -6px 0 4px; color: #8fa3b8; font-size: 13px; }
+
+/* Ô nhập phát sáng */
+.face label { color: #8fe9f7; font-size: 13px; gap: 6px; }
+.face input,
+.face select {
+  width: 100%;
+  padding: 11px 14px;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(0, 229, 255, 0.35);
+  border-radius: 14px;
+  color: #e8fbff;
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.face input::placeholder { color: #5f7185; }
+.face input:focus,
+.face select:focus {
+  outline: none;
+  border-color: #00e5ff;
+  box-shadow: 0 0 0 1px #00e5ff, 0 0 16px rgba(0, 229, 255, 0.55);
+}
+.face select option { background: #0b1220; color: #e8fbff; }
+
+.pw { position: relative; }
+.pw input { padding-right: 64px; }
+.eye {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: transparent;
+  color: #7df3ff;
+  padding: 4px 8px;
+  font-size: 13px;
+}
+
+/* Chọn vai trò */
+.face .choice {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  color: #cfefff;
+  border-radius: 14px;
+  margin: 0;
+  justify-content: center;
+}
+.face .choice.picked {
+  border-color: #00e5ff;
+  background: rgba(0, 229, 255, 0.12);
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.45);
+}
+.face .choice input { all: revert; accent-color: #00e5ff; }
+
+/* Nút neon có vệt sáng quét */
+.neon-btn {
+  position: relative;
+  overflow: hidden;
+  padding: 12px;
+  border-radius: 14px;
+  border: 1px solid #00e5ff;
+  color: #fff;
+  background: linear-gradient(90deg, rgba(0, 229, 255, 0.18), rgba(123, 47, 247, 0.28));
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  font-weight: 700;
+  box-shadow: 0 0 14px rgba(0, 229, 255, 0.4), inset 0 0 14px rgba(0, 229, 255, 0.15);
+  transition: box-shadow 0.25s, transform 0.15s;
+}
+.neon-btn:hover:not(:disabled) {
+  box-shadow: 0 0 26px rgba(0, 229, 255, 0.8), inset 0 0 18px rgba(0, 229, 255, 0.3);
+  transform: translateY(-1px);
+}
+.neon-btn::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -60%;
+  width: 40%;
+  height: 100%;
+  background: linear-gradient(100deg, transparent, rgba(255, 255, 255, 0.35), transparent);
+  transform: skewX(-20deg);
+}
+.neon-btn:hover::after { animation: sheen 0.9s; }
+@keyframes sheen { to { left: 130%; } }
+
+.auth-switch { text-align: center; color: #8fa3b8; font-size: 14px; margin: 4px 0 0; }
+.linkbtn {
+  background: none;
+  padding: 0;
+  color: #00e5ff;
+  font-weight: 700;
+  text-shadow: 0 0 8px rgba(0, 229, 255, 0.7);
+}
+.face .error { background: rgba(224, 49, 49, 0.15); color: #ffb4b4; border: 1px solid rgba(224, 49, 49, 0.4); margin: 0; }
+.face .ok { color: #7bf5a5; margin: 0; }
+.face .muted { color: #8fa3b8; }
+
+@media (prefers-reduced-motion: reduce) {
+  .neon::before { animation: none; }
+  .flip-inner { transition: none; }
+}
+
+/* ===== Làm đẹp trang chủ và thanh menu ===== */
+.nav { position: sticky; top: 0; z-index: 10; box-shadow: 0 2px 12px rgba(20, 30, 60, 0.06); }
+.hero h1 {
+  font-size: 56px;
+  background: linear-gradient(90deg, #3b5bdb, #9c36b5, #0bc5ea);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.btn {
+  background: linear-gradient(90deg, #3b5bdb, #7048e8);
+  box-shadow: 0 6px 18px rgba(59, 91, 219, 0.35);
+  transition: transform 0.15s, box-shadow 0.2s;
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(59, 91, 219, 0.45); }
+.btn.ghost { background: #eef1f8; box-shadow: none; }
+.features .card { transition: transform 0.2s, box-shadow 0.2s; }
+.features .card:hover { transform: translateY(-4px); box-shadow: 0 12px 28px rgba(40, 60, 120, 0.12); }
