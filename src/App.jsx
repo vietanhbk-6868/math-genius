@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, NavLink, Link, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, NavLink, Link, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./AuthContext";
 import RequireRole from "./components/RequireRole";
 import Home from "./pages/Home";
@@ -44,7 +44,7 @@ function RoleRedirect() {
 
 export default function App() {
   return (
-    <BrowserRouter>
+    <HashRouter>
       <AuthProvider>
         <Navbar />
         <Routes>
@@ -57,6 +57,6 @@ export default function App() {
           <Route path="/student/report" element={<RequireRole role="student"><StudentReport /></RequireRole>} />
         </Routes>
       </AuthProvider>
-    </BrowserRouter>
+    </HashRouter>
   );
 }
