@@ -17,6 +17,7 @@ export default function TeacherQuestionBank() {
     const { data, error } = await supabase
       .from("questions")
       .select("*")
+      .eq("status", "approved")
       .order("created_at", { ascending: false })
       .limit(100);
     if (error) setError(error.message);

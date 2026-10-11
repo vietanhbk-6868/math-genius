@@ -397,3 +397,12 @@ p.bad { color: var(--bad); font-weight: 600; }
   .neon::before { animation: none; }
   .flip-inner { transition: none; }
 }
+.notice {
+  padding: 10px 14px;
+  border-radius: 12px;
+  font-size: 14px;
+  line-height: 1.55;
+  color: #ffd36b;
+  background: rgba(255, 176, 32, 0.12);
+  border: 1px solid rgba(255, 176, 32, 0.4);
+}

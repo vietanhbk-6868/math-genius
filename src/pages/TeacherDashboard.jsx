@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabase";
-
+import { diagnose } from "../api";
 const QUOTA = 4;
 const pct = (c, t) => (t ? Math.round((c / t) * 100) : null);
 
@@ -26,6 +26,8 @@ export default function TeacherDashboard() {
   const [error, setError] = useState("");
   const [classFilter, setClassFilter] = useState("");
   const [openId, setOpenId] = useState(null);
+  const [ai, setAi] = useState(null);
+  const [aiLoading, setAiLoading] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -122,6 +124,34 @@ export default function TeacherDashboard() {
       .sort((a, b) => a.count - b.count);
   }, [bank, skillRows]);
 
+  async function runAI() {
+  if (view.classSkills.length === 0) {
+    return setError("Chưa có dữ liệu bài làm để phân tích.");
+  }
+  setAiLoading(true);
+  setError("");
+  try {
+    const stats = view.classSkills.slice(0, 12).map((s) => ({
+      skill_tag: s.skill_tag,
+      correct: s.correct,
+      total: s.total,
+      students: s.students,
+    }));
+    const res = await diagnose(stats, "class", {
+      class: classFilter || "tất cả các lớp",
+      students: view.rows.length,
+      active: view.active,
+      attempts: view.attempts,
+      accuracy: view.accuracy ?? 0,
+      needSupport: view.rows.filter((r) => r.rate !== null && r.rate < 50).length,
+    });
+    setAi(res);
+  } catch (e) {
+    setError(e.message);
+  } finally {
+    setAiLoading(false);
+  }
+}
   if (loading) return <p className="page muted">Đang tải...</p>;
 
   return (
@@ -130,7 +160,10 @@ export default function TeacherDashboard() {
         <h1>Tổng quan lớp</h1>
         <label>
           Lớp
-          <select value={classFilter} onChange={(e) => setClassFilter(e.target.value)}>
+          <select value={classFilter} onChange={(e) => {
+  setClassFilter(e.target.value);
+  setAi(null);
+}}>
             <option value="">Tất cả các lớp</option>
             {classes.map((c) => (
               <option key={c}>{c}</option>
@@ -162,7 +195,59 @@ export default function TeacherDashboard() {
           </div>
         ))}
       </div>
+        <h2>Nhận xét của AI cho lớp</h2>
+{!ai && (
+  <button onClick={runAI} disabled={aiLoading}>
+    {aiLoading ? "AI đang phân tích..." : "Phân tích lớp bằng AI"}
+  </button>
+)}
+{ai && (
+  <div className="card">
+    <p>{ai.summary}</p>
 
+    {ai.weaknesses?.length > 0 && (
+      <>
+        <h3>Nên dạy lại / củng cố</h3>
+        {ai.weaknesses.map((w, i) => (
+          <div className="aibox bad" key={i}>
+            <b>{w.skill_tag}</b>
+            <p className="muted">{w.possible_cause}</p>
+            <p>{w.advice}</p>
+          </div>
+        ))}
+      </>
+    )}
+
+    {ai.strengths?.length > 0 && (
+      <>
+        <h3>Điểm mạnh của lớp</h3>
+        {ai.strengths.map((s, i) => (
+          <div className="aibox good" key={i}>
+            <b>{s.skill_tag}</b>
+            <p>{s.comment}</p>
+          </div>
+        ))}
+      </>
+    )}
+
+    {ai.next_steps?.length > 0 && (
+      <>
+        <h3>Gợi ý cho tiết học tới</h3>
+        <ol>
+          {ai.next_steps.map((n, i) => (
+            <li key={i}>{n}</li>
+          ))}
+        </ol>
+      </>
+    )}
+    <p className="muted small">
+      Nhận xét do AI tạo từ số liệu tổng hợp ẩn danh (không gửi họ tên học sinh), chỉ mang tính tham khảo, giáo viên là người quyết định.
+    </p>
+    <button className="ghost" onClick={runAI} disabled={aiLoading}>
+      {aiLoading ? "Đang phân tích..." : "Phân tích lại"}
+    </button>
+  </div>
+)}
       <h2>Danh sách học sinh</h2>
       <div className="card tablewrap">
         <table className="tbl">

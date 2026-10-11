@@ -39,8 +39,9 @@ const [planLoading, setPlanLoading] = useState(false);
   useEffect(() => {
     (async () => {
       const { data, error } = await supabase
-        .from("answers")
-        .select("skill_tag, level, correct, attempt_id, question_id");
+  .from("answers")
+  .select("skill_tag, level, correct, attempt_id, question_id, attempts!inner(source)")
+  .eq("attempts.source", "class");
       if (error) setError(error.message);
       else setRows(data);
     })();

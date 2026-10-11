@@ -8,6 +8,7 @@ import StudentTest from "./pages/StudentTest";
 import StudentReport from "./pages/StudentReport";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import AdminPage from "./pages/AdminPage";
+import StudentAIPractice from "./pages/StudentAIPractice";
 function Navbar() {
   const { session, profile, signOut } = useAuth();
   return (
@@ -24,6 +25,7 @@ function Navbar() {
   <>
     <NavLink to="/student" end>Làm bài</NavLink>
     <NavLink to="/student/report">Báo cáo</NavLink>
+    <NavLink to="/student/ai">Luyện với AI</NavLink>
   </>
 )}
       <span className="spacer" />
@@ -62,6 +64,7 @@ export default function App() {
   <Route path="/app" element={<RoleRedirect />} />
   <Route path="/student" element={<RequireRole role="student"><StudentTest /></RequireRole>} />
   <Route path="/student/report" element={<RequireRole role="student"><StudentReport /></RequireRole>} />
+  <Route path="/student/ai" element={<RequireRole role="student"><StudentAIPractice /></RequireRole>} />
   <Route path="/teacher" element={<RequireRole role={["teacher", "admin"]}><TeacherQuestionBank /></RequireRole>} />
   <Route path="/teacher/dashboard" element={<RequireRole role={["teacher", "admin"]}><TeacherDashboard /></RequireRole>} />
   <Route path="/admin" element={<RequireRole role="admin"><AdminPage /></RequireRole>} />

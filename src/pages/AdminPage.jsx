@@ -98,24 +98,25 @@ export default function AdminPage() {
   const [error, setError] = useState("");
 
   async function load() {
-    const [c, u, s, a, k] = await Promise.all([
-      supabase.from("classes").select("*").order("name"),
-      supabase.from("profiles").select("id, full_name, role, class_name").order("full_name"),
-      supabase.from("app_settings").select("value").eq("key", "teacher_code").maybeSingle(),
-      supabase
-        .from("attempts")
-        .select("id, student_id, score, total, topic, created_at")
-        .order("created_at", { ascending: true }),
-      supabase.from("student_skill_stats").select("*"),
-    ]);
-    const err = c.error || u.error || s.error || a.error || k.error;
-    if (err) return setError(err.message);
-    setClasses(c.data);
-    setUsers(u.data);
-    setTeacherCode(s.data?.value ?? "");
-    setAttempts(a.data);
-    setSkillRows(k.data);
-  }
+  const [c, u, s, a, k] = await Promise.all([
+    supabase.from("classes").select("*").order("name"),
+    supabase.from("profiles").select("id, full_name, role, class_name").order("full_name"),
+    supabase.from("app_settings").select("value").eq("key", "teacher_code").maybeSingle(),
+    supabase
+      .from("attempts")
+      .select("id, student_id, score, total, topic, created_at")
+      .eq("source", "class")
+      .order("created_at", { ascending: true }),
+    supabase.from("student_skill_stats").select("*"),
+  ]);
+  const err = c.error || u.error || s.error || a.error || k.error;
+  if (err) return setError(err.message);
+  setClasses(c.data ?? []);
+  setUsers(u.data ?? []);
+  setTeacherCode(s.data?.value ?? "");
+  setAttempts(a.data ?? []);
+  setSkillRows(k.data ?? []);
+}
 
   useEffect(() => {
     load();

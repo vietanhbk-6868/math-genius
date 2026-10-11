@@ -10,5 +10,5 @@ export async function getAuth(req) {
   const { data } = await sb.auth.getUser(token);
   if (!data?.user) return null;
   const { data: p } = await sb.from("profiles").select("role").eq("id", data.user.id).single();
-  return { user: data.user, role: p?.role ?? null };
+  return { user: data.user, role: p?.role ?? null, sb };
 }

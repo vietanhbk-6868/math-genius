@@ -21,10 +21,16 @@ const [mode, setMode] = useState("normal");
 
 useEffect(() => {
   const rq = location.state?.remedial;
+  const aq = location.state?.aiPractice;
   if (rq?.length) {
     setQuestions(rq);
     setChosen({});
     setMode("remedial");
+    setStage("test");
+  } else if (aq?.length) {
+    setQuestions(aq);
+    setChosen({});
+    setMode("ai");
     setStage("test");
   }
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -90,8 +96,9 @@ useEffect(() => {
       .insert({
         student_name: profile.full_name,
         student_id: session.user.id,
-        grade: mode === "remedial" ? (questions[0]?.grade ?? null) : Number(form.grade),
-        topic: mode === "remedial" ? "Bổ trợ" : form.topic || null,
+       grade: mode === "normal" ? Number(form.grade) : (questions[0]?.grade ?? null),
+topic: mode === "remedial" ? "Bổ trợ" : mode === "ai" ? "Tự luyện AI" : form.topic || null,
+source: mode === "ai" ? "ai_self" : "class",
         score,
         total: rows.length,
       })
@@ -176,7 +183,13 @@ useEffect(() => {
   if (stage === "test") {
     return (
       <div className="page">
-        <h1>{mode === "remedial" ? "Bài bổ trợ của " : "Bài làm của "}{profile.full_name}</h1>
+        <h1>
+  {mode === "remedial" ? "Bài bổ trợ của " : mode === "ai" ? "Tự luyện AI của " : "Bài làm của "}
+  {profile.full_name}
+</h1>
+{mode === "ai" && (
+  <p className="notice">Câu hỏi do AI tạo, chưa qua giáo viên duyệt. Hãy đối chiếu với kiến thức đã học.</p>
+)}
         {questions.map((q, idx) => (
           <div className="card" key={q.id}>
             <p className="q">
@@ -209,6 +222,9 @@ useEffect(() => {
     <div className="page">
       <h1>Kết quả của {form.name}</h1>
       <div className="card score">
+        {mode === "ai" && (
+  <p className="muted">Bài tự luyện AI không được tính vào báo cáo của lớp.</p>
+)}
         {result.score} / {result.total} câu đúng
       </div>
 

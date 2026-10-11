@@ -17,4 +17,6 @@ async function postJSON(url, body) {
 }
 
 export const generateQuestions = (body) => postJSON("/api/questions/generate", body);
-export const diagnose = (stats) => postJSON("/api/diagnose", { stats });
+export const diagnose = (stats, scope = "student", meta = null) =>
+  postJSON("/api/diagnose", { stats, scope, meta });
+export const generateStudentQuestions = (body) => postJSON("/api/student/generate", body);
