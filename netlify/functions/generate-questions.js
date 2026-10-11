@@ -6,7 +6,7 @@ export default async (req) => {
     return Response.json({ error: "Chỉ hỗ trợ POST" }, { status: 405 });
   }
   const auth = await getAuth(req);
-  if (auth?.role !== "teacher") {
+  if (!["teacher", "admin"].includes(auth?.role)) {
     return Response.json({ error: "Chỉ giáo viên mới được dùng chức năng này" }, { status: 403 });
   }
   try {

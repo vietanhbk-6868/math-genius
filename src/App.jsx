@@ -7,17 +7,19 @@ import TeacherQuestionBank from "./pages/TeacherQuestionBank";
 import StudentTest from "./pages/StudentTest";
 import StudentReport from "./pages/StudentReport";
 import TeacherDashboard from "./pages/TeacherDashboard";
+import AdminPage from "./pages/AdminPage";
 function Navbar() {
   const { session, profile, signOut } = useAuth();
   return (
     <nav className="nav">
       <Link to="/" className="brand">MathGenius</Link>
-      {profile?.role === "teacher" && (
+      {(profile?.role === "teacher" || profile?.role === "admin") && (
   <>
     <NavLink to="/teacher" end>Ngân hàng câu hỏi</NavLink>
     <NavLink to="/teacher/dashboard">Tổng quan lớp</NavLink>
   </>
 )}
+{profile?.role === "admin" && <NavLink to="/admin">Quản trị</NavLink>}
       {profile?.role === "student" && (
   <>
     <NavLink to="/student" end>Làm bài</NavLink>
@@ -45,7 +47,7 @@ function RoleRedirect() {
   if (busy) return <p className="page muted">Đang tải...</p>;
   if (!session) return <Navigate to="/login" replace />;
   if (!profile) return <p className="page error">Không tìm thấy hồ sơ tài khoản.</p>;
-  return <Navigate to={profile.role === "teacher" ? "/teacher" : "/student"} replace />;
+  return <Navigate to={profile.role === "admin" ? "/admin": profile.role === "teacher" ? "/teacher" : "/student"} replace />;
 }
 
 export default function App() {
@@ -54,15 +56,16 @@ export default function App() {
       <AuthProvider>
         <Navbar />
         <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/login" element={<AuthPage mode="login" />} />
-          <Route path="/register" element={<AuthPage mode="register" />} />
-          <Route path="/app" element={<RoleRedirect />} />
-          <Route path="/teacher" element={<RequireRole role="teacher"><TeacherQuestionBank /></RequireRole>} />
-          <Route path="/teacher/dashboard" element={<RequireRole role="teacher"><TeacherDashboard /></RequireRole>} />
-          <Route path="/student" element={<RequireRole role="student"><StudentTest /></RequireRole>} />
-          <Route path="/student/report" element={<RequireRole role="student"><StudentReport /></RequireRole>} />
-        </Routes>
+  <Route path="/" element={<Home />} />
+  <Route path="/login" element={<AuthPage mode="login" />} />
+  <Route path="/register" element={<AuthPage mode="register" />} />
+  <Route path="/app" element={<RoleRedirect />} />
+  <Route path="/student" element={<RequireRole role="student"><StudentTest /></RequireRole>} />
+  <Route path="/student/report" element={<RequireRole role="student"><StudentReport /></RequireRole>} />
+  <Route path="/teacher" element={<RequireRole role={["teacher", "admin"]}><TeacherQuestionBank /></RequireRole>} />
+  <Route path="/teacher/dashboard" element={<RequireRole role={["teacher", "admin"]}><TeacherDashboard /></RequireRole>} />
+  <Route path="/admin" element={<RequireRole role="admin"><AdminPage /></RequireRole>} />
+</Routes>
       </AuthProvider>
     </HashRouter>
   );

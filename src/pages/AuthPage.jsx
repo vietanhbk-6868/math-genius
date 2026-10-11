@@ -1,12 +1,12 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
-
+import { supabase } from "../supabase";
 function viMessage(msg) {
   if (msg.includes("Invalid login credentials")) return "Sai email hoặc mật khẩu.";
   if (msg.includes("already registered")) return "Email này đã được đăng ký.";
   if (msg.includes("at least 6")) return "Mật khẩu cần tối thiểu 6 ký tự.";
-  if (msg.includes("Database error saving new user")) return "Mã giáo viên không đúng.";
+  if (msg.includes("Database error saving new user")) return "Mã giáo viên hoặc lớp không hợp lệ.";
   return msg;
 }
 
@@ -18,6 +18,16 @@ export default function AuthPage({ mode }) {
   const [error, setError] = useState("");
   const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
+  const [classes, setClasses] = useState([]);
+
+useEffect(() => {
+  if (!isRegister) return;
+  supabase
+    .from("classes")
+    .select("name")
+    .order("name")
+    .then(({ data }) => setClasses((data || []).map((c) => c.name)));
+}, [isRegister]);
 
   async function submit(e) {
     e.preventDefault();
@@ -65,16 +75,23 @@ export default function AuthPage({ mode }) {
               </label>
             </div>
             {f.role === "student" && (
-              <label>
-                Lớp
-                <input
-                required
-                placeholder="Ví dụ: 8A"
-                value={f.classroom}
-                onChange={(e) => setF({ ...f, classroom: e.target.value })}
-                />
-             </label>
-            )}
+  <label>
+    Lớp
+    <select
+      required
+      value={f.classroom}
+      onChange={(e) => setF({ ...f, classroom: e.target.value })}
+    >
+      <option value="" disabled>{classes.length ? "Chọn lớp" : "Chưa có lớp nào"}</option>
+      {classes.map((c) => (
+        <option key={c} value={c}>{c}</option>
+      ))}
+    </select>
+    {classes.length === 0 && (
+      <span className="muted small">Hãy liên hệ quản trị viên để thêm lớp.</span>
+    )}
+  </label>
+)}
             {f.role === "teacher" && (
               <label>
                 Mã giáo viên
