@@ -20,3 +20,5 @@ export const generateQuestions = (body) => postJSON("/api/questions/generate", b
 export const diagnose = (stats, scope = "student", meta = null) =>
   postJSON("/api/diagnose", { stats, scope, meta });
 export const generateStudentQuestions = (body) => postJSON("/api/student/generate", body);
+export const resetPassword = (userId, newPassword) =>
+  postJSON("/api/admin/reset-password", { userId, newPassword });

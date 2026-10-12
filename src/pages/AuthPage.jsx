@@ -4,20 +4,21 @@ import { useAuth } from "../AuthContext";
 import { supabase } from "../supabase";
 
 function viMessage(msg) {
-  if (msg.includes("Invalid login credentials")) return "Sai email hoặc mật khẩu.";
-  if (msg.includes("already registered")) return "Email này đã được đăng ký.";
+  if (msg.includes("Invalid login credentials")) return "Sai tên tài khoản hoặc mật khẩu.";
   if (msg.includes("at least 6")) return "Mật khẩu cần tối thiểu 6 ký tự.";
-  if (msg.includes("Database error saving new user")) return "Mã giáo viên hoặc lớp không hợp lệ.";
   return msg;
 }
 
-function PasswordInput({ value, onChange, show, onToggle }) {
+const cleanName = (v) => v.toLowerCase().replace(/\s/g, "");
+
+function PasswordInput({ value, onChange, show, onToggle, autoComplete }) {
   return (
     <div className="pw">
       <input
         type={show ? "text" : "password"}
         required
         minLength={6}
+        autoComplete={autoComplete}
         value={value}
         onChange={onChange}
       />
@@ -34,23 +35,20 @@ export default function AuthPage({ mode }) {
   const [isRegister, setIsRegister] = useState(mode === "register");
   const [f, setF] = useState({
     fullName: "",
-    email: "",
+    username: "",
     password: "",
     role: "student",
     teacherCode: "",
     classroom: "",
   });
   const [error, setError] = useState("");
-  const [info, setInfo] = useState("");
   const [busy, setBusy] = useState(false);
   const [classes, setClasses] = useState([]);
   const [showPw, setShowPw] = useState(false);
 
-  // Khi đổi đường dẫn /login <-> /register thì lật thẻ theo
   useEffect(() => {
     setIsRegister(mode === "register");
     setError("");
-    setInfo("");
   }, [mode]);
 
   useEffect(() => {
@@ -64,13 +62,11 @@ export default function AuthPage({ mode }) {
   function flip(toRegister) {
     setIsRegister(toRegister);
     setError("");
-    setInfo("");
   }
 
   async function submit(e) {
     e.preventDefault();
     setError("");
-    setInfo("");
     setBusy(true);
     const res = isRegister
       ? await signUp({
@@ -78,12 +74,9 @@ export default function AuthPage({ mode }) {
           teacherCode: f.role === "teacher" ? f.teacherCode.trim() : "",
           classroom: f.role === "student" ? f.classroom : "",
         })
-      : await signIn(f.email, f.password);
+      : await signIn(f.username, f.password);
     setBusy(false);
     if (res.error) return setError(viMessage(res.error.message));
-    if (isRegister && !res.data.session) {
-      return setInfo("Đăng ký thành công. Hãy kiểm tra email để xác nhận rồi đăng nhập.");
-    }
     navigate("/app");
   }
 
@@ -97,17 +90,19 @@ export default function AuthPage({ mode }) {
               <h2 className="neon-title">CHÀO MỪNG</h2>
               <p className="auth-sub">Đăng nhập vào tài khoản của bạn</p>
               <label>
-                Email
+                Tên tài khoản
                 <input
-                  type="email"
                   required
-                  value={f.email}
-                  onChange={(e) => setF({ ...f, email: e.target.value })}
+                  autoComplete="username"
+                  placeholder="Ví dụ: nguyenvanan"
+                  value={f.username}
+                  onChange={(e) => setF({ ...f, username: cleanName(e.target.value) })}
                 />
               </label>
               <label>
                 Mật khẩu
                 <PasswordInput
+                  autoComplete="current-password"
                   value={f.password}
                   onChange={(e) => setF({ ...f, password: e.target.value })}
                   show={showPw}
@@ -123,6 +118,9 @@ export default function AuthPage({ mode }) {
                 <button type="button" className="linkbtn" onClick={() => flip(true)}>
                   Đăng ký
                 </button>
+              </p>
+              <p className="muted small" style={{ textAlign: "center" }}>
+                Quên mật khẩu? Hãy nhờ giáo viên đặt lại cho bạn.
               </p>
             </form>
 
@@ -187,25 +185,32 @@ export default function AuthPage({ mode }) {
                 </label>
               )}
               <label>
-                Email
+                Tên tài khoản
                 <input
-                  type="email"
                   required
-                  value={f.email}
-                  onChange={(e) => setF({ ...f, email: e.target.value })}
+                  minLength={3}
+                  maxLength={20}
+                  pattern="[a-z0-9._]{3,20}"
+                  title="3 đến 20 ký tự: chữ thường không dấu, số, dấu chấm hoặc gạch dưới"
+                  autoComplete="username"
+                  placeholder="Ví dụ: nguyenvanan"
+                  value={f.username}
+                  onChange={(e) => setF({ ...f, username: cleanName(e.target.value) })}
                 />
+                <span className="muted small">Chữ thường không dấu, số, dấu chấm hoặc gạch dưới (3 đến 20 ký tự).</span>
               </label>
               <label>
                 Mật khẩu
                 <PasswordInput
+                  autoComplete="new-password"
                   value={f.password}
                   onChange={(e) => setF({ ...f, password: e.target.value })}
                   show={showPw}
                   onToggle={() => setShowPw(!showPw)}
                 />
+                <span className="muted small">Tối thiểu 6 ký tự. Hãy ghi lại để không quên.</span>
               </label>
               {isRegister && error && <p className="error">{error}</p>}
-              {isRegister && info && <p className="ok">{info}</p>}
               <button type="submit" className="neon-btn" disabled={busy}>
                 {busy ? "Đang xử lý..." : "Đăng ký"}
               </button>

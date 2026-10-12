@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabase";
-import { diagnose } from "../api";
+import { diagnose, resetPassword } from "../api";
 const QUOTA = 4;
 const pct = (c, t) => (t ? Math.round((c / t) * 100) : null);
 
@@ -32,7 +32,7 @@ export default function TeacherDashboard() {
   useEffect(() => {
     (async () => {
       const [p, o, s, q] = await Promise.all([
-        supabase.from("profiles").select("id, full_name, class_name").eq("role", "student"),
+        supabase.from("profiles").select("id, full_name, class_name, username").eq("role", "student"),
         supabase.from("student_overview").select("*"),
         supabase.from("student_skill_stats").select("*"),
         supabase.from("questions").select("skill_tag").eq("status", "approved"),
@@ -150,6 +150,17 @@ export default function TeacherDashboard() {
     setError(e.message);
   } finally {
     setAiLoading(false);
+  }
+}
+  async function resetPw(r) {
+  const pw = window.prompt(`Nhập mật khẩu mới cho ${r.full_name} (tối thiểu 6 ký tự):`);
+  if (!pw) return;
+  if (pw.length < 6) return setError("Mật khẩu cần tối thiểu 6 ký tự.");
+  try {
+    await resetPassword(r.id, pw);
+    window.alert(`Đã đặt lại mật khẩu cho ${r.full_name}.`);
+  } catch (e) {
+    setError(e.message);
   }
 }
   if (loading) return <p className="page muted">Đang tải...</p>;
@@ -279,6 +290,10 @@ export default function TeacherDashboard() {
                 openId === r.id && (
                   <tr key={r.id + "-detail"}>
                     <td colSpan="6">
+                      <div className="row between">
+  <span className="muted">Tên tài khoản: {r.username || "—"}</span>
+  <button className="ghost" onClick={() => resetPw(r)}>Đặt lại mật khẩu</button>
+</div>
                       {r.skills.length === 0 && <p className="muted">Chưa có dữ liệu.</p>}
                       {r.skills.map((s) => (
                         <div className="skillrow" key={s.skill_tag}>

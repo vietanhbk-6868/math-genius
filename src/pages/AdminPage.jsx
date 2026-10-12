@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabase";
 import { useAuth } from "../AuthContext";
-
+import { resetPassword } from "../api";
 const ROLE_LABEL = { student: "Học sinh", teacher: "Giáo viên", admin: "Quản trị viên" };
 const NAV = [
   { id: "overview", icon: "📊", label: "Tổng quan" },
@@ -100,7 +100,7 @@ export default function AdminPage() {
   async function load() {
   const [c, u, s, a, k] = await Promise.all([
     supabase.from("classes").select("*").order("name"),
-    supabase.from("profiles").select("id, full_name, role, class_name").order("full_name"),
+    supabase.from("profiles").select("id, full_name, role, class_name, username").order("full_name"),
     supabase.from("app_settings").select("value").eq("key", "teacher_code").maybeSingle(),
     supabase
       .from("attempts")
@@ -268,7 +268,17 @@ export default function AdminPage() {
     setUsers((us) => us.map((u) => (u.id === id ? { ...u, ...patch } : u)));
     flash("Đã cập nhật.");
   }
-
+  async function resetPw(u) {
+  const pw = window.prompt(`Nhập mật khẩu mới cho ${u.full_name} (tối thiểu 6 ký tự):`);
+  if (!pw) return;
+  if (pw.length < 6) return setError("Mật khẩu cần tối thiểu 6 ký tự.");
+  try {
+    await resetPassword(u.id, pw);
+    flash(`Đã đặt lại mật khẩu cho ${u.full_name}.`);
+  } catch (e) {
+    setError(e.message);
+  }
+}
   async function saveCode(e) {
     e.preventDefault();
     const value = teacherCode.trim();
@@ -489,14 +499,21 @@ export default function AdminPage() {
             <div className="card tablewrap">
               <table className="tbl">
                 <thead>
-                  <tr><th>Họ tên</th><th>Vai trò</th><th>Lớp</th></tr>
+                  <tr><th>Họ tên</th><th>Tên tài khoản</th><th>Vai trò</th><th>Lớp</th><th></th></tr>
                 </thead>
                 <tbody>
                   {filteredUsers.map((u) => {
                     const isMe = u.id === session?.user?.id;
                     return (
                       <tr key={u.id}>
-                        <td>{u.full_name}{isMe ? " (bạn)" : ""}</td>
+                        <td>{u.full_name}{isMe ? " (bạn)" : ""}
+                          <td>
+  {!isMe && u.role !== "admin" && (
+    <button className="ghost" onClick={() => resetPw(u)}>Đặt lại mật khẩu</button>
+  )}
+</td>
+                        </td>
+                        <td>{u.username || "—"}</td>
                         <td>
                           {u.role === "admin" || isMe ? (
                             ROLE_LABEL[u.role]
