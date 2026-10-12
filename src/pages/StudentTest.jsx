@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
+import { useLocation, Link } from "react-router-dom";
 import { supabase } from "../supabase";
 import MathText from "../components/MathText";
-import { useAuth } from "../AuthContext";
-import { useLocation, Link } from "react-router-dom";
+import { fmtPoints, pointsClass } from "../score";
+
 const LETTERS = ["A", "B", "C", "D"];
 
 function shuffle(arr) {
@@ -14,35 +15,50 @@ function shuffle(arr) {
   return a;
 }
 
-export default function StudentTest() {
-  const { session, profile } = useAuth();
-  const location = useLocation();
-const [mode, setMode] = useState("normal");
+function skillSummary(rows) {
+  const map = {};
+  rows.forEach((r) => {
+    const k = r.question.skill_tag || "Khác";
+    map[k] = map[k] || { correct: 0, total: 0 };
+    map[k].total += 1;
+    if (r.correct) map[k].correct += 1;
+  });
+  return Object.entries(map);
+}
 
-useEffect(() => {
-  const rq = location.state?.remedial;
-  const aq = location.state?.aiPractice;
-  if (rq?.length) {
-    setQuestions(rq);
-    setChosen({});
-    setMode("remedial");
-    setStage("test");
-  } else if (aq?.length) {
-    setQuestions(aq);
-    setChosen({});
-    setMode("ai");
-    setStage("test");
-  }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-}, []);
+export default function StudentTest() {
+  const location = useLocation();
   const [stage, setStage] = useState("setup"); // setup | test | result
+  const [mode, setMode] = useState("normal"); // normal | remedial | ai | assignment
+  const [assignment, setAssignment] = useState(null);
   const [meta, setMeta] = useState([]);
-  const [form, setForm] = useState({ name: "", grade: 8, topic: "", count: 10 });
+  const [form, setForm] = useState({ grade: 8, topic: "", count: 10 });
   const [questions, setQuestions] = useState([]);
   const [chosen, setChosen] = useState({});
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+
+  // Nhận bài từ các trang khác (bài tập được giao, bài bổ trợ, luyện AI)
+  useEffect(() => {
+    const s = location.state;
+    if (s?.assignment?.questions?.length) {
+      setAssignment(s.assignment);
+      setQuestions(s.assignment.questions);
+      setMode("assignment");
+    } else if (s?.remedial?.length) {
+      setQuestions(s.remedial);
+      setMode("remedial");
+    } else if (s?.aiPractice?.length) {
+      setQuestions(s.aiPractice);
+      setMode("ai");
+    } else {
+      return;
+    }
+    setChosen({});
+    setStage("test");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -75,6 +91,7 @@ useEffect(() => {
     if (!data.length) return setError("Chưa có câu hỏi phù hợp. Hãy nhờ giáo viên thêm câu hỏi.");
     setQuestions(shuffle(data).slice(0, Number(form.count)));
     setChosen({});
+    setMode("normal");
     setStage("test");
   }
 
@@ -84,64 +101,36 @@ useEffect(() => {
 
     setBusy(true);
     setError("");
+    const topic =
+      mode === "assignment" ? assignment.title
+      : mode === "remedial" ? "Bổ trợ"
+      : mode === "ai" ? "Tự luyện AI"
+      : form.topic || null;
+    const grade = mode === "normal" ? Number(form.grade) : (questions[0]?.grade ?? null);
+
+    const { data, error } = await supabase.rpc("submit_attempt", {
+      p_source: mode === "ai" ? "ai_self" : "class",
+      p_assignment: mode === "assignment" ? assignment.id : null,
+      p_topic: topic,
+      p_grade: grade,
+      p_answers: questions.map((q) => ({ question_id: q.id, chosen: chosen[q.id] ?? null })),
+    });
+    setBusy(false);
+    if (error) return setError(error.message);
+
     const rows = questions.map((q) => ({
       question: q,
       chosen: chosen[q.id] ?? null,
       correct: chosen[q.id] === q.answer,
     }));
-    const score = rows.filter((r) => r.correct).length;
-
-    const { data: attempt, error: e1 } = await supabase
-      .from("attempts")
-      .insert({
-        student_name: profile.full_name,
-        student_id: session.user.id,
-       grade: mode === "normal" ? Number(form.grade) : (questions[0]?.grade ?? null),
-topic: mode === "remedial" ? "Bổ trợ" : mode === "ai" ? "Tự luyện AI" : form.topic || null,
-source: mode === "ai" ? "ai_self" : "class",
-        score,
-        total: rows.length,
-      })
-      .select()
-      .single();
-    if (e1) {
-      setBusy(false);
-      return setError(e1.message);
-    }
-
-    const { error: e2 } = await supabase.from("answers").insert(
-      rows.map((r) => ({
-        attempt_id: attempt.id,
-        question_id: r.question.id,
-        skill_tag: r.question.skill_tag,
-        level: r.question.level,
-        chosen: r.chosen,
-        correct: r.correct,
-      }))
-    );
-    setBusy(false);
-    if (e2) return setError(e2.message);
-
-    setResult({ score, total: rows.length, rows });
+    setResult({ ...data, rows });
     setStage("result");
-  }
-
-  // Thống kê tỉ lệ đúng theo kỹ năng
-  function skillSummary(rows) {
-    const map = {};
-    rows.forEach((r) => {
-      const k = r.question.skill_tag || "Khác";
-      map[k] = map[k] || { correct: 0, total: 0 };
-      map[k].total += 1;
-      if (r.correct) map[k].correct += 1;
-    });
-    return Object.entries(map);
   }
 
   if (stage === "setup") {
     return (
       <div className="page">
-        <h1>Làm bài trắc nghiệm</h1>
+        <h1>Luyện tập trắc nghiệm</h1>
         <form className="card form" onSubmit={start}>
           <label>
             Lớp
@@ -170,9 +159,7 @@ source: mode === "ai" ? "ai_self" : "class",
               onChange={(e) => setForm({ ...form, count: e.target.value })}
             />
           </label>
-          <button type="submit" disabled={busy}>
-            Bắt đầu
-          </button>
+          <button type="submit" disabled={busy}>Bắt đầu</button>
         </form>
         <p className="muted">Hiện có {available} câu hỏi phù hợp.</p>
         {error && <p className="error">{error}</p>}
@@ -184,12 +171,15 @@ source: mode === "ai" ? "ai_self" : "class",
     return (
       <div className="page">
         <h1>
-  {mode === "remedial" ? "Bài bổ trợ của " : mode === "ai" ? "Tự luyện AI của " : "Bài làm của "}
-  {profile.full_name}
-</h1>
-{mode === "ai" && (
-  <p className="notice">Câu hỏi do AI tạo, chưa qua giáo viên duyệt. Hãy đối chiếu với kiến thức đã học.</p>
-)}
+          {mode === "assignment" ? assignment.title
+            : mode === "remedial" ? "Bài bổ trợ"
+            : mode === "ai" ? "Tự luyện với AI"
+            : "Bài luyện tập"}
+        </h1>
+        {mode === "assignment" && assignment.description && <p className="muted">{assignment.description}</p>}
+        {mode === "ai" && (
+          <p className="notice">Câu hỏi do AI tạo, chưa qua giáo viên duyệt. Hãy đối chiếu với kiến thức đã học.</p>
+        )}
         {questions.map((q, idx) => (
           <div className="card" key={q.id}>
             <p className="q">
@@ -220,20 +210,27 @@ source: mode === "ai" ? "ai_self" : "class",
 
   return (
     <div className="page">
-      <h1>Kết quả của {form.name}</h1>
+      <h1>Kết quả{mode === "assignment" ? `: ${assignment.title}` : ""}</h1>
       <div className="card score">
-        {mode === "ai" && (
-  <p className="muted">Bài tự luyện AI không được tính vào báo cáo của lớp.</p>
-)}
-        {result.score} / {result.total} câu đúng
+        <div className={`bigpoints ${pointsClass(result.points)}`}>
+          {fmtPoints(result.points)}
+          <small>/10</small>
+        </div>
+        <p className="muted">{result.score}/{result.total} câu đúng</p>
       </div>
+      {mode === "assignment" && (
+        <p className="notice">Điểm đã được ghi nhận cho bài tập. Nếu bài còn lượt làm, điểm cao nhất sẽ được tính.</p>
+      )}
+      {mode === "ai" && (
+        <p className="muted">Bài tự luyện AI không được tính vào báo cáo và bảng điểm của lớp.</p>
+      )}
 
       <h2>Theo từng kỹ năng</h2>
       <div className="card">
         {skillSummary(result.rows).map(([skill, s]) => (
           <p key={skill} className="skill">
             <span>{skill}</span>
-            <b>{s.correct}/{s.total}</b>
+            <b>{s.correct}/{s.total} câu</b>
           </p>
         ))}
       </div>
@@ -259,9 +256,21 @@ source: mode === "ai" ? "ai_self" : "class",
         </div>
       ))}
       <div className="row">
-  <button onClick={() => { setMode("normal"); setStage("setup"); }}>Làm bài khác</button>
-  <Link className="btn ghost" to="/student/report">Xem báo cáo</Link>
-</div>
+        {mode === "assignment" ? (
+          <Link className="btn" to="/student/assignments">Về danh sách bài tập</Link>
+        ) : (
+          <button
+            onClick={() => {
+              setMode("normal");
+              setAssignment(null);
+              setStage("setup");
+            }}
+          >
+            Làm bài khác
+          </button>
+        )}
+        <Link className="btn ghost" to="/student/report">Xem báo cáo</Link>
+      </div>
     </div>
   );
 }

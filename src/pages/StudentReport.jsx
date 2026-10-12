@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { supabase } from "../supabase";
 import { diagnose } from "../api";
-
+import { fmtPoints, pointsClass } from "../score";
 function suggestLevel(rate) {
   if (rate < 50) return "Nên ôn lại mức nhận biết / thông hiểu";
   if (rate < 80) return "Nên luyện thêm mức vận dụng";
@@ -29,6 +29,7 @@ function levelDistance(level, targets) {
   return Math.min(...targets.map((t) => Math.abs(idx - ORDER.indexOf(t))));
 }
 export default function StudentReport() {
+  const [attemptList, setAttemptList] = useState([]);
   const [rows, setRows] = useState(null);
   const [error, setError] = useState("");
   const [ai, setAi] = useState(null);
@@ -37,15 +38,26 @@ export default function StudentReport() {
 const [plan, setPlan] = useState(null);
 const [planLoading, setPlanLoading] = useState(false);
   useEffect(() => {
-    (async () => {
-      const { data, error } = await supabase
-  .from("answers")
-  .select("skill_tag, level, correct, attempt_id, question_id, attempts!inner(source)")
-  .eq("attempts.source", "class");
-      if (error) setError(error.message);
-      else setRows(data);
-    })();
-  }, []);
+  (async () => {
+    const [a, t] = await Promise.all([
+      supabase
+        .from("answers")
+        .select("skill_tag, level, correct, attempt_id, question_id, attempts!inner(source)")
+        .eq("attempts.source", "class"),
+      supabase
+        .from("attempts")
+        .select("id, points, score, total, topic, created_at")
+        .eq("source", "class")
+        .order("created_at", { ascending: false }),
+    ]);
+    const err = a.error || t.error;
+    if (err) setError(err.message);
+    else {
+      setRows(a.data);
+      setAttemptList(t.data);
+    }
+  })();
+}, []);
 
   const stats = useMemo(() => {
     if (!rows) return [];
@@ -152,13 +164,36 @@ function startRemedial() {
       {error && <p className="error">{error}</p>}
 
       <div className="card summary">
-        <div><b>{attempts}</b><span>lượt làm bài</span></div>
-        <div><b>{rows?.length ?? 0}</b><span>câu đã làm</span></div>
-        <div>
-          <b>{rows?.length ? Math.round((totalCorrect / rows.length) * 100) : 0}%</b>
-          <span>tỉ lệ đúng</span>
-        </div>
-      </div>
+  <div><b>{attemptList.length}</b><span>lượt làm bài</span></div>
+  <div><b>{rows?.length ?? 0}</b><span>câu đã làm</span></div>
+  <div>
+    <b>
+      {attemptList.length
+        ? fmtPoints(attemptList.reduce((n, a) => n + Number(a.points), 0) / attemptList.length)
+        : "—"}
+    </b>
+    <span>điểm trung bình</span>
+  </div>
+</div>
+
+<h2>Điểm các lần làm gần đây</h2>
+<div className="card tablewrap">
+  <table className="tbl">
+    <thead>
+      <tr><th>Ngày</th><th>Nội dung</th><th>Số câu đúng</th><th>Điểm</th></tr>
+    </thead>
+    <tbody>
+      {attemptList.slice(0, 10).map((a) => (
+        <tr key={a.id}>
+          <td>{new Date(a.created_at).toLocaleDateString("vi-VN")}</td>
+          <td>{a.topic || "Tất cả chủ đề"}</td>
+          <td>{a.score}/{a.total}</td>
+          <td><span className={`badge ${pointsClass(Number(a.points))}`}>{fmtPoints(a.points)}</span></td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
 
       <h2>Theo từng kỹ năng (yếu nhất ở trên)</h2>
       <div className="card">

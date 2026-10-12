@@ -9,6 +9,9 @@ import StudentReport from "./pages/StudentReport";
 import TeacherDashboard from "./pages/TeacherDashboard";
 import AdminPage from "./pages/AdminPage";
 import StudentAIPractice from "./pages/StudentAIPractice";
+import TeacherAssignments from "./pages/TeacherAssignments";
+import TeacherGrades from "./pages/TeacherGrades";
+import StudentAssignments from "./pages/StudentAssignments";
 function Navbar() {
   const { session, profile, signOut } = useAuth();
   return (
@@ -18,6 +21,8 @@ function Navbar() {
   <>
     <NavLink to="/teacher" end>Ngân hàng câu hỏi</NavLink>
     <NavLink to="/teacher/dashboard">Tổng quan lớp</NavLink>
+    <NavLink to="/teacher/assignments">Giao bài</NavLink>
+<NavLink to="/teacher/grades">Bảng điểm</NavLink>
   </>
 )}
 {profile?.role === "admin" && <NavLink to="/admin">Quản trị</NavLink>}
@@ -26,6 +31,7 @@ function Navbar() {
     <NavLink to="/student" end>Làm bài</NavLink>
     <NavLink to="/student/report">Báo cáo</NavLink>
     <NavLink to="/student/ai">Luyện với AI</NavLink>
+    <NavLink to="/student/assignments">Bài tập</NavLink>
   </>
 )}
       <span className="spacer" />
@@ -68,6 +74,9 @@ export default function App() {
   <Route path="/teacher" element={<RequireRole role={["teacher", "admin"]}><TeacherQuestionBank /></RequireRole>} />
   <Route path="/teacher/dashboard" element={<RequireRole role={["teacher", "admin"]}><TeacherDashboard /></RequireRole>} />
   <Route path="/admin" element={<RequireRole role="admin"><AdminPage /></RequireRole>} />
+  <Route path="/teacher/assignments" element={<RequireRole role={["teacher", "admin"]}><TeacherAssignments /></RequireRole>} />
+<Route path="/teacher/grades" element={<RequireRole role={["teacher", "admin"]}><TeacherGrades /></RequireRole>} />
+<Route path="/student/assignments" element={<RequireRole role="student"><StudentAssignments /></RequireRole>} />
 </Routes>
       </AuthProvider>
     </HashRouter>

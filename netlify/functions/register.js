@@ -29,11 +29,24 @@ export default async (req) => {
 
     const admin = adminClient();
 
-    if (role === "teacher") {
-      const { data: s } = await admin.from("app_settings").select("value").eq("key", "teacher_code").maybeSingle();
-      if (!s || s.value !== teacherCode) return json({ error: "Mã giáo viên không đúng." }, 403);
+        if (role === "teacher") {
+      const { data: s, error: sErr } = await admin
+        .from("app_settings")
+        .select("value")
+        .eq("key", "teacher_code")
+        .maybeSingle();
+      if (sErr) return json({ error: "Không đọc được cài đặt: " + sErr.message }, 500);
+      if (!s) {
+        return json({ error: "Chưa có mã giáo viên trong cài đặt. Hãy đặt mã ở Quản trị, mục Cài đặt." }, 500);
+      }
+      if (s.value !== teacherCode) return json({ error: "Mã giáo viên không đúng." }, 403);
     } else {
-      const { data: c } = await admin.from("classes").select("id").eq("name", classroom).maybeSingle();
+      const { data: c, error: cErr } = await admin
+        .from("classes")
+        .select("id")
+        .eq("name", classroom)
+        .maybeSingle();
+      if (cErr) return json({ error: "Không đọc được danh sách lớp: " + cErr.message }, 500);
       if (!c) return json({ error: "Lớp không hợp lệ. Hãy chọn lớp trong danh sách." }, 400);
     }
 

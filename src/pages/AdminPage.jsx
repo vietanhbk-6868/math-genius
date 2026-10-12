@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabase";
 import { useAuth } from "../AuthContext";
 import { resetPassword } from "../api";
+import { fmtPoints } from "../score";
 const ROLE_LABEL = { student: "Học sinh", teacher: "Giáo viên", admin: "Quản trị viên" };
 const NAV = [
   { id: "overview", icon: "📊", label: "Tổng quan" },
@@ -26,10 +27,10 @@ function weekStart(dateStr) {
 /* Biểu đồ đường: points = [{ label, value (0-100), tip }] */
 function LineChart({ points }) {
   if (!points.length) return <p className="muted">Chưa có dữ liệu bài làm.</p>;
-  const W = 640, H = 230, pl = 40, pr = 14, pt = 14, pb = 30;
+  const W = 640, H = 230, pl = 36, pr = 14, pt = 14, pb = 30;
   const n = points.length;
   const x = (i) => (n === 1 ? (pl + W - pr) / 2 : pl + (i * (W - pl - pr)) / (n - 1));
-  const y = (v) => pt + (1 - v / 100) * (H - pt - pb);
+  const y = (v) => pt + (1 - v / 10) * (H - pt - pb);
   const line = points.map((p, i) => `${i ? "L" : "M"}${x(i)},${y(p.value)}`).join(" ");
   const area = `${line} L${x(n - 1)},${y(0)} L${x(0)},${y(0)} Z`;
   const step = Math.ceil(n / 8);
@@ -41,10 +42,10 @@ function LineChart({ points }) {
           <stop offset="100%" stopColor="#00e5ff" stopOpacity="0" />
         </linearGradient>
       </defs>
-      {[0, 25, 50, 75, 100].map((v) => (
+      {[0, 2, 4, 6, 8, 10].map((v) => (
         <g key={v}>
           <line className="grid" x1={pl} x2={W - pr} y1={y(v)} y2={y(v)} />
-          <text x={pl - 6} y={y(v) + 4} textAnchor="end">{v}%</text>
+          <text x={pl - 6} y={y(v) + 4} textAnchor="end">{v}</text>
         </g>
       ))}
       {n > 1 && <path d={area} fill="url(#areaFill)" />}
@@ -52,11 +53,9 @@ function LineChart({ points }) {
       {points.map((p, i) => (
         <g key={i}>
           <circle className="dot" cx={x(i)} cy={y(p.value)} r="4.5">
-            <title>{p.tip || `${p.label}: ${p.value}%`}</title>
+            <title>{p.tip || `${p.label}: ${fmtPoints(p.value)} điểm`}</title>
           </circle>
-          {i % step === 0 && (
-            <text x={x(i)} y={H - 8} textAnchor="middle">{p.label}</text>
-          )}
+          {i % step === 0 && <text x={x(i)} y={H - 8} textAnchor="middle">{p.label}</text>}
         </g>
       ))}
     </svg>
@@ -104,7 +103,7 @@ export default function AdminPage() {
     supabase.from("app_settings").select("value").eq("key", "teacher_code").maybeSingle(),
     supabase
       .from("attempts")
-      .select("id, student_id, score, total, topic, created_at")
+      .select("id, student_id, score, total, points, topic, created_at")
       .eq("source", "class")
       .order("created_at", { ascending: true }),
     supabase.from("student_skill_stats").select("*"),
@@ -139,96 +138,93 @@ export default function AdminPage() {
   }, [students]);
 
   /* ---- Số liệu tổng quan ---- */
-  const overview = useMemo(() => {
-    const classOf = Object.fromEntries(students.map((s) => [s.id, s.class_name]));
-    const valid = attempts.filter((a) => a.student_id);
-    const sumScore = valid.reduce((n, a) => n + a.score, 0);
-    const sumTotal = valid.reduce((n, a) => n + a.total, 0);
+ const overview = useMemo(() => {
+  const classOf = Object.fromEntries(students.map((s) => [s.id, s.class_name]));
+  const valid = attempts.filter((a) => a.student_id);
+  const avgPoints = valid.length ? valid.reduce((n, a) => n + Number(a.points), 0) / valid.length : null;
 
-    const counts = {};
-    valid.forEach((a) => {
-      const k = new Date(a.created_at).toDateString();
-      counts[k] = (counts[k] || 0) + 1;
-    });
-    const days = [];
-    for (let i = 13; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      days.push({ label: fmtDate(d), value: counts[d.toDateString()] || 0 });
-    }
+  const counts = {};
+  valid.forEach((a) => {
+    const k = new Date(a.created_at).toDateString();
+    counts[k] = (counts[k] || 0) + 1;
+  });
+  const days = [];
+  for (let i = 13; i >= 0; i--) {
+    const d = new Date();
+    d.setDate(d.getDate() - i);
+    days.push({ label: fmtDate(d), value: counts[d.toDateString()] || 0 });
+  }
 
-    const byClass = {};
-    valid.forEach((a) => {
-      const cn = classOf[a.student_id];
-      if (!cn) return;
-      byClass[cn] ||= { name: cn, score: 0, total: 0, attempts: 0 };
-      byClass[cn].score += a.score;
-      byClass[cn].total += a.total;
-      byClass[cn].attempts += 1;
-    });
-    const classAvg = Object.values(byClass)
-      .map((c) => ({ ...c, rate: pct(c.score, c.total) }))
-      .sort((a, b) => a.rate - b.rate);
+  const byClass = {};
+  valid.forEach((a) => {
+    const cn = classOf[a.student_id];
+    if (!cn) return;
+    byClass[cn] ||= { name: cn, sum: 0, attempts: 0 };
+    byClass[cn].sum += Number(a.points);
+    byClass[cn].attempts += 1;
+  });
+  const classAvg = Object.values(byClass)
+    .map((c) => ({ ...c, avg: c.sum / c.attempts }))
+    .sort((a, b) => a.avg - b.avg);
 
-    return { attempts: valid.length, accuracy: pct(sumScore, sumTotal), days, classAvg };
-  }, [attempts, students]);
+  return { attempts: valid.length, avgPoints, days, classAvg };
+}, [attempts, students]);
 
   /* ---- Số liệu tiến độ ---- */
   const progStudents = students.filter((s) => !progClass || s.class_name === progClass);
   const selected = students.find((s) => s.id === progStudent);
 
-  const progress = useMemo(() => {
-    if (selected) {
-      const list = attempts.filter((a) => a.student_id === selected.id);
-      const points = list.map((a, i) => {
-        const v = pct(a.score, a.total);
-        return {
-          label: `#${i + 1}`,
-          value: v,
-          tip: `Lượt ${i + 1} (${fmtDate(a.created_at)}): ${a.score}/${a.total} câu, ${v}%`,
-        };
-      });
-      const skills = skillRows
-        .filter((r) => r.student_id === selected.id)
-        .map((r) => ({
-          skill_tag: r.skill_tag || "Khác",
-          correct: Number(r.correct),
-          total: Number(r.total),
-          rate: pct(Number(r.correct), Number(r.total)),
-        }))
-        .sort((a, b) => a.rate - b.rate);
-      return { mode: "student", list, points, skills };
-    }
-    const ids = new Set(progStudents.map((s) => s.id));
-    const weeks = {};
-    attempts
-      .filter((a) => ids.has(a.student_id))
-      .forEach((a) => {
-        const ws = weekStart(a.created_at);
-        const k = ws.getTime();
-        weeks[k] ||= { date: ws, score: 0, total: 0, n: 0 };
-        weeks[k].score += a.score;
-        weeks[k].total += a.total;
-        weeks[k].n += 1;
-      });
-    const points = Object.values(weeks)
-      .sort((a, b) => a.date - b.date)
-      .map((w) => {
-        const v = pct(w.score, w.total);
-        return {
-          label: fmtDate(w.date),
-          value: v,
-          tip: `Tuần ${fmtDate(w.date)}: ${w.n} lượt, tỉ lệ đúng ${v}%`,
-        };
-      });
-    return { mode: "class", points };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [attempts, skillRows, selected, progClass, users]);
+ const progress = useMemo(() => {
+  if (selected) {
+    const list = attempts.filter((a) => a.student_id === selected.id);
+    const points = list.map((a, i) => {
+      const v = Number(a.points);
+      return {
+        label: `#${i + 1}`,
+        value: v,
+        tip: `Lượt ${i + 1} (${fmtDate(a.created_at)}): ${a.score}/${a.total} câu, ${fmtPoints(v)} điểm`,
+      };
+    });
+    const skills = skillRows
+      .filter((r) => r.student_id === selected.id)
+      .map((r) => ({
+        skill_tag: r.skill_tag || "Khác",
+        correct: Number(r.correct),
+        total: Number(r.total),
+        rate: pct(Number(r.correct), Number(r.total)),
+      }))
+      .sort((a, b) => a.rate - b.rate);
+    return { mode: "student", list, points, skills };
+  }
+  const ids = new Set(progStudents.map((s) => s.id));
+  const weeks = {};
+  attempts
+    .filter((a) => ids.has(a.student_id))
+    .forEach((a) => {
+      const ws = weekStart(a.created_at);
+      const k = ws.getTime();
+      weeks[k] ||= { date: ws, sum: 0, n: 0 };
+      weeks[k].sum += Number(a.points);
+      weeks[k].n += 1;
+    });
+  const points = Object.values(weeks)
+    .sort((a, b) => a.date - b.date)
+    .map((w) => {
+      const v = Math.round((w.sum / w.n) * 10) / 10;
+      return {
+        label: fmtDate(w.date),
+        value: v,
+        tip: `Tuần ${fmtDate(w.date)}: ${w.n} lượt, điểm TB ${fmtPoints(v)}`,
+      };
+    });
+  return { mode: "class", points };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+}, [attempts, skillRows, selected, progClass, users]);
 
-  const trend =
-    progress.mode === "student" && progress.points.length >= 2
-      ? progress.points[progress.points.length - 1].value - progress.points[0].value
-      : null;
+const trend =
+  progress.mode === "student" && progress.points.length >= 2
+    ? Math.round((progress.points[progress.points.length - 1].value - progress.points[0].value) * 10) / 10
+    : null;
 
   /* ---- Thao tác quản trị ---- */
   async function addClass(e) {
@@ -321,7 +317,7 @@ export default function AdminPage() {
               <div><b>{students.length}</b><span>học sinh</span></div>
               <div><b>{users.filter((u) => u.role !== "student").length}</b><span>giáo viên / quản trị</span></div>
               <div><b>{overview.attempts}</b><span>lượt làm bài</span></div>
-              <div><b>{overview.accuracy}%</b><span>tỉ lệ đúng TB</span></div>
+              <div><b>{fmtPoints(overview.avgPoints)}</b><span>điểm TB</span></div>
             </div>
             <div className="grid2">
               <div className="card">
@@ -332,16 +328,16 @@ export default function AdminPage() {
                 <h3>Tỉ lệ đúng trung bình theo lớp</h3>
                 {overview.classAvg.length === 0 && <p className="muted">Chưa có dữ liệu.</p>}
                 {overview.classAvg.map((c) => (
-                  <div className="skillrow" key={c.name}>
-                    <div className="skillhead">
-                      <span>{c.name}</span>
-                      <b>{c.rate}% · {c.attempts} lượt</b>
-                    </div>
-                    <div className="bar">
-                      <div className={`fill ${barClass(c.rate)}`} style={{ width: `${c.rate}%` }} />
-                    </div>
-                  </div>
-                ))}
+  <div className="skillrow" key={c.name}>
+    <div className="skillhead">
+      <span>{c.name}</span>
+      <b>{fmtPoints(c.avg)} điểm · {c.attempts} lượt</b>
+    </div>
+    <div className="bar">
+      <div className={`fill ${barClass(c.avg * 10)}`} style={{ width: `${c.avg * 10}%` }} />
+    </div>
+  </div>
+))}
               </div>
             </div>
           </>
@@ -382,17 +378,17 @@ export default function AdminPage() {
             <div className="card">
               <h3>
                 {progress.mode === "student"
-                  ? `Tiến độ của ${selected.full_name}: tỉ lệ đúng qua từng lượt làm bài`
-                  : "Tiến độ trung bình theo tuần"}
+                  ? `Tiến độ của ${selected.full_name}: điểm qua từng lượt làm bài`
+                  : "Tiến độ điểm trung bình theo tuần"}
               </h3>
               <LineChart points={progress.points} />
               {trend !== null && (
-                <p className={trend >= 0 ? "ok" : "bad"}>
-                  {trend > 0 && `Tiến bộ ${trend} điểm phần trăm so với lượt đầu tiên.`}
-                  {trend === 0 && "Chưa thay đổi so với lượt đầu tiên."}
-                  {trend < 0 && `Giảm ${Math.abs(trend)} điểm phần trăm so với lượt đầu tiên.`}
-                </p>
-              )}
+  <p className={trend >= 0 ? "ok" : "bad"}>
+    {trend > 0 && `Tiến bộ ${fmtPoints(trend)} điểm so với lượt đầu tiên.`}
+    {trend === 0 && "Chưa thay đổi so với lượt đầu tiên."}
+    {trend < 0 && `Giảm ${fmtPoints(Math.abs(trend))} điểm so với lượt đầu tiên.`}
+  </p>
+)}
               {progress.mode === "student" && progress.points.length === 1 && (
                 <p className="muted small">Mới có 1 lượt làm bài, cần thêm dữ liệu để thấy xu hướng.</p>
               )}
@@ -426,7 +422,7 @@ export default function AdminPage() {
                         <tr key={a.id}>
                           <td>{fmtDate(a.created_at)}</td>
                           <td>{a.topic || "Tất cả chủ đề"}</td>
-                          <td>{a.score}/{a.total} ({pct(a.score, a.total)}%)</td>
+                          <td>{a.score}/{a.total} câu · {fmtPoints(a.points)} điểm</td>
                         </tr>
                       ))}
                     </tbody>
