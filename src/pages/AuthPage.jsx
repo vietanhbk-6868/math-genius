@@ -4,7 +4,8 @@ import { useAuth } from "../AuthContext";
 import { supabase } from "../supabase";
 
 function viMessage(msg) {
-  if (msg.includes("Invalid login credentials")) return "Sai tên tài khoản hoặc mật khẩu.";
+  if (msg.includes("Invalid login credentials"))
+    return "Sai tên tài khoản hoặc mật khẩu.";
   if (msg.includes("at least 6")) return "Mật khẩu cần tối thiểu 6 ký tự.";
   return msg;
 }
@@ -22,7 +23,12 @@ function PasswordInput({ value, onChange, show, onToggle, autoComplete }) {
         value={value}
         onChange={onChange}
       />
-      <button type="button" className="eye" onClick={onToggle} aria-label="Hiện hoặc ẩn mật khẩu">
+      <button
+        type="button"
+        className="eye"
+        onClick={onToggle}
+        aria-label="Hiện hoặc ẩn mật khẩu"
+      >
         {show ? "Ẩn" : "Hiện"}
       </button>
     </div>
@@ -96,7 +102,9 @@ export default function AuthPage({ mode }) {
                   autoComplete="username"
                   placeholder="Ví dụ: nguyenvanan"
                   value={f.username}
-                  onChange={(e) => setF({ ...f, username: cleanName(e.target.value) })}
+                  onChange={(e) =>
+                    setF({ ...f, username: cleanName(e.target.value) })
+                  }
                 />
               </label>
               <label>
@@ -115,7 +123,11 @@ export default function AuthPage({ mode }) {
               </button>
               <p className="auth-switch">
                 Chưa có tài khoản?{" "}
-                <button type="button" className="linkbtn" onClick={() => flip(true)}>
+                <button
+                  type="button"
+                  className="linkbtn"
+                  onClick={() => flip(true)}
+                >
                   Đăng ký
                 </button>
               </p>
@@ -137,7 +149,9 @@ export default function AuthPage({ mode }) {
                 />
               </label>
               <div className="roles">
-                <label className={`choice ${f.role === "student" ? "picked" : ""}`}>
+                <label
+                  className={`choice ${f.role === "student" ? "picked" : ""}`}
+                >
                   <input
                     type="radio"
                     checked={f.role === "student"}
@@ -145,7 +159,9 @@ export default function AuthPage({ mode }) {
                   />
                   Học sinh
                 </label>
-                <label className={`choice ${f.role === "teacher" ? "picked" : ""}`}>
+                <label
+                  className={`choice ${f.role === "teacher" ? "picked" : ""}`}
+                >
                   <input
                     type="radio"
                     checked={f.role === "teacher"}
@@ -166,11 +182,15 @@ export default function AuthPage({ mode }) {
                       {classes.length ? "Chọn lớp" : "Chưa có lớp nào"}
                     </option>
                     {classes.map((c) => (
-                      <option key={c} value={c}>{c}</option>
+                      <option key={c} value={c}>
+                        {c}
+                      </option>
                     ))}
                   </select>
                   {classes.length === 0 && (
-                    <span className="muted small">Hãy liên hệ quản trị viên để thêm lớp.</span>
+                    <span className="muted small">
+                      Hãy liên hệ quản trị viên để thêm lớp.
+                    </span>
                   )}
                 </label>
               )}
@@ -180,7 +200,9 @@ export default function AuthPage({ mode }) {
                   <input
                     required
                     value={f.teacherCode}
-                    onChange={(e) => setF({ ...f, teacherCode: e.target.value })}
+                    onChange={(e) =>
+                      setF({ ...f, teacherCode: e.target.value })
+                    }
                   />
                 </label>
               )}
@@ -195,9 +217,14 @@ export default function AuthPage({ mode }) {
                   autoComplete="username"
                   placeholder="Ví dụ: nguyenvanan"
                   value={f.username}
-                  onChange={(e) => setF({ ...f, username: cleanName(e.target.value) })}
+                  onChange={(e) =>
+                    setF({ ...f, username: cleanName(e.target.value) })
+                  }
                 />
-                <span className="muted small">Chữ thường không dấu, số, dấu chấm hoặc gạch dưới (3 đến 20 ký tự).</span>
+                <span className="muted small">
+                  Chữ thường không dấu, số, dấu chấm hoặc gạch dưới (3 đến 20 ký
+                  tự).
+                </span>
               </label>
               <label>
                 Mật khẩu
@@ -208,7 +235,9 @@ export default function AuthPage({ mode }) {
                   show={showPw}
                   onToggle={() => setShowPw(!showPw)}
                 />
-                <span className="muted small">Tối thiểu 6 ký tự. Hãy ghi lại để không quên.</span>
+                <span className="muted small">
+                  Tối thiểu 6 ký tự. Hãy ghi lại để không quên.
+                </span>
               </label>
               {isRegister && error && <p className="error">{error}</p>}
               <button type="submit" className="neon-btn" disabled={busy}>
@@ -216,7 +245,11 @@ export default function AuthPage({ mode }) {
               </button>
               <p className="auth-switch">
                 Đã có tài khoản?{" "}
-                <button type="button" className="linkbtn" onClick={() => flip(false)}>
+                <button
+                  type="button"
+                  className="linkbtn"
+                  onClick={() => flip(false)}
+                >
                   Đăng nhập
                 </button>
               </p>

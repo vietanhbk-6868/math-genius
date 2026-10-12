@@ -36,14 +36,22 @@ export default function TeacherGrades() {
       try {
         const [c, s, a, t] = await Promise.all([
           supabase.from("classes").select("name").order("name"),
-          supabase.from("profiles").select("id, full_name, username, class_name").eq("role", "student"),
-          supabase.from("assignments").select("id, title, class_names, created_at").order("created_at", { ascending: true }),
+          supabase
+            .from("profiles")
+            .select("id, full_name, username, class_name")
+            .eq("role", "student"),
+          supabase
+            .from("assignments")
+            .select("id, title, class_names, created_at")
+            .order("created_at", { ascending: true }),
           fetchAll(() =>
             supabase
               .from("attempts")
-              .select("id, student_id, assignment_id, score, total, points, topic, source, created_at")
+              .select(
+                "id, student_id, assignment_id, score, total, points, topic, source, created_at",
+              )
               .order("created_at", { ascending: true })
-              .order("id")
+              .order("id"),
           ),
         ]);
         const err = c.error || s.error || a.error;
@@ -67,7 +75,7 @@ export default function TeacherGrades() {
       .sort(
         (a, b) =>
           givenName(a.full_name).localeCompare(givenName(b.full_name), "vi") ||
-          a.full_name.localeCompare(b.full_name, "vi")
+          a.full_name.localeCompare(b.full_name, "vi"),
       );
     const asg = assignments.filter((a) => a.class_names.includes(cls));
 
@@ -84,7 +92,12 @@ export default function TeacherGrades() {
       const done = cells.filter((x) => x !== null);
       const sum = done.reduce((n, x) => n + x, 0);
       const denom = zeroMissing ? asg.length : done.length;
-      return { ...s, cells, done: done.length, avg: denom ? Math.round((sum / denom) * 10) / 10 : null };
+      return {
+        ...s,
+        cells,
+        done: done.length,
+        avg: denom ? Math.round((sum / denom) * 10) / 10 : null,
+      };
     });
     return { rows, asg };
   }, [students, assignments, attempts, cls, zeroMissing]);
@@ -98,36 +111,77 @@ export default function TeacherGrades() {
 
       // Trang 1: bảng điểm
       const ws = wb.addWorksheet("Bảng điểm");
-      ws.addRow(["STT", "Họ và tên", "Tên tài khoản", ...sheet.asg.map((a) => a.title), "Điểm TB"]);
+      ws.addRow([
+        "STT",
+        "Họ và tên",
+        "Tên tài khoản",
+        ...sheet.asg.map((a) => a.title),
+        "Điểm TB",
+      ]);
       sheet.rows.forEach((r, i) => {
-        const row = ws.addRow([i + 1, r.full_name, r.username || "", ...r.cells.map((x) => x ?? ""), r.avg ?? ""]);
-        for (let c = 4; c <= 4 + sheet.asg.length; c++) row.getCell(c).numFmt = "0.0";
+        const row = ws.addRow([
+          i + 1,
+          r.full_name,
+          r.username || "",
+          ...r.cells.map((x) => x ?? ""),
+          r.avg ?? "",
+        ]);
+        for (let c = 4; c <= 4 + sheet.asg.length; c++)
+          row.getCell(c).numFmt = "0.0";
       });
       ws.getRow(1).font = { bold: true };
-      ws.getRow(1).alignment = { vertical: "middle", horizontal: "center", wrapText: true };
-      ws.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD9E8FF" } };
+      ws.getRow(1).alignment = {
+        vertical: "middle",
+        horizontal: "center",
+        wrapText: true,
+      };
+      ws.getRow(1).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFD9E8FF" },
+      };
       ws.getColumn(1).width = 6;
       ws.getColumn(2).width = 28;
       ws.getColumn(3).width = 18;
-      for (let c = 4; c <= 4 + sheet.asg.length; c++) ws.getColumn(c).width = 16;
+      for (let c = 4; c <= 4 + sheet.asg.length; c++)
+        ws.getColumn(c).width = 16;
       ws.views = [{ state: "frozen", xSplit: 3, ySplit: 1 }];
 
       // Trang 2: chi tiết các lượt làm
       const ws2 = wb.addWorksheet("Chi tiết các lượt làm");
-      ws2.addRow(["Họ và tên", "Lớp", "Bài tập / nội dung", "Lần làm", "Thời gian nộp", "Số câu đúng", "Tổng số câu", "Điểm"]);
+      ws2.addRow([
+        "Họ và tên",
+        "Lớp",
+        "Bài tập / nội dung",
+        "Lần làm",
+        "Thời gian nộp",
+        "Số câu đúng",
+        "Tổng số câu",
+        "Điểm",
+      ]);
       const nameOf = Object.fromEntries(sheet.rows.map((r) => [r.id, r]));
-      const asgTitle = Object.fromEntries(assignments.map((a) => [a.id, a.title]));
+      const asgTitle = Object.fromEntries(
+        assignments.map((a) => [a.id, a.title]),
+      );
       const counter = {};
       attempts
         .filter((t) => nameOf[t.student_id])
-        .sort((a, b) => nameOf[a.student_id].full_name.localeCompare(nameOf[b.student_id].full_name, "vi") || (a.created_at < b.created_at ? -1 : 1))
+        .sort(
+          (a, b) =>
+            nameOf[a.student_id].full_name.localeCompare(
+              nameOf[b.student_id].full_name,
+              "vi",
+            ) || (a.created_at < b.created_at ? -1 : 1),
+        )
         .forEach((t) => {
           const key = `${t.student_id}|${t.assignment_id || t.topic || "luyen-tap"}`;
           counter[key] = (counter[key] || 0) + 1;
           const row = ws2.addRow([
             nameOf[t.student_id].full_name,
             cls,
-            t.assignment_id ? asgTitle[t.assignment_id] || "(bài tập đã xóa)" : `Luyện tập${t.topic ? `: ${t.topic}` : ""}`,
+            t.assignment_id
+              ? asgTitle[t.assignment_id] || "(bài tập đã xóa)"
+              : `Luyện tập${t.topic ? `: ${t.topic}` : ""}`,
             counter[key],
             new Date(t.created_at),
             t.score,
@@ -138,8 +192,14 @@ export default function TeacherGrades() {
           row.getCell(8).numFmt = "0.0";
         });
       ws2.getRow(1).font = { bold: true };
-      ws2.getRow(1).fill = { type: "pattern", pattern: "solid", fgColor: { argb: "FFD9E8FF" } };
-      [28, 10, 36, 10, 20, 12, 12, 10].forEach((w, i) => (ws2.getColumn(i + 1).width = w));
+      ws2.getRow(1).fill = {
+        type: "pattern",
+        pattern: "solid",
+        fgColor: { argb: "FFD9E8FF" },
+      };
+      [28, 10, 36, 10, 20, 12, 12, 10].forEach(
+        (w, i) => (ws2.getColumn(i + 1).width = w),
+      );
 
       const buf = await wb.xlsx.writeBuffer();
       const blob = new Blob([buf], {
@@ -181,7 +241,11 @@ export default function TeacherGrades() {
       {error && <p className="error">{error}</p>}
 
       <label className="cls-check" style={{ width: "fit-content" }}>
-        <input type="checkbox" checked={zeroMissing} onChange={(e) => setZeroMissing(e.target.checked)} />
+        <input
+          type="checkbox"
+          checked={zeroMissing}
+          onChange={(e) => setZeroMissing(e.target.checked)}
+        />
         Tính bài chưa làm là 0 điểm khi tính điểm TB
       </label>
 
@@ -200,7 +264,11 @@ export default function TeacherGrades() {
           </thead>
           <tbody>
             {sheet.rows.length === 0 && (
-              <tr><td colSpan={4 + sheet.asg.length} className="muted">Lớp này chưa có học sinh.</td></tr>
+              <tr>
+                <td colSpan={4 + sheet.asg.length} className="muted">
+                  Lớp này chưa có học sinh.
+                </td>
+              </tr>
             )}
             {sheet.rows.map((r, i) => (
               <tr key={r.id}>
@@ -208,19 +276,30 @@ export default function TeacherGrades() {
                 <td>{r.full_name}</td>
                 <td>{r.username || "—"}</td>
                 {r.cells.map((v, j) => (
-                  <td key={j} className={v === null ? "pt" : `pt ${pointsClass(v)}`}>
+                  <td
+                    key={j}
+                    className={v === null ? "pt" : `pt ${pointsClass(v)}`}
+                  >
                     {fmtPoints(v)}
                   </td>
                 ))}
-                <td className={r.avg === null ? "pt" : `pt ${pointsClass(r.avg)}`}>{fmtPoints(r.avg)}</td>
+                <td
+                  className={r.avg === null ? "pt" : `pt ${pointsClass(r.avg)}`}
+                >
+                  {fmtPoints(r.avg)}
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
-      {sheet.asg.length === 0 && <p className="muted">Lớp này chưa được giao bài tập nào.</p>}
+      {sheet.asg.length === 0 && (
+        <p className="muted">Lớp này chưa được giao bài tập nào.</p>
+      )}
       <p className="muted small">
-        Điểm mỗi bài tập là điểm cao nhất trong các lượt làm. File Excel có thêm trang "Chi tiết các lượt làm" gồm cả các lần luyện tập tự do của học sinh.
+        Điểm mỗi bài tập là điểm cao nhất trong các lượt làm. File Excel có thêm
+        trang "Chi tiết các lượt làm" gồm cả các lần luyện tập tự do của học
+        sinh.
       </p>
     </div>
   );

@@ -72,23 +72,38 @@ export default function StudentTest() {
   }, []);
 
   const topics = useMemo(
-    () => [...new Set(meta.filter((m) => m.grade === Number(form.grade)).map((m) => m.topic).filter(Boolean))],
-    [meta, form.grade]
+    () => [
+      ...new Set(
+        meta
+          .filter((m) => m.grade === Number(form.grade))
+          .map((m) => m.topic)
+          .filter(Boolean),
+      ),
+    ],
+    [meta, form.grade],
   );
   const available = meta.filter(
-    (m) => m.grade === Number(form.grade) && (!form.topic || m.topic === form.topic)
+    (m) =>
+      m.grade === Number(form.grade) && (!form.topic || m.topic === form.topic),
   ).length;
 
   async function start(e) {
     e.preventDefault();
     setError("");
     setBusy(true);
-    let q = supabase.from("questions").select("*").eq("status", "approved").eq("grade", Number(form.grade));
+    let q = supabase
+      .from("questions")
+      .select("*")
+      .eq("status", "approved")
+      .eq("grade", Number(form.grade));
     if (form.topic) q = q.eq("topic", form.topic);
     const { data, error } = await q;
     setBusy(false);
     if (error) return setError(error.message);
-    if (!data.length) return setError("Chưa có câu hỏi phù hợp. Hãy nhờ giáo viên thêm câu hỏi.");
+    if (!data.length)
+      return setError(
+        "Chưa có câu hỏi phù hợp. Hãy nhờ giáo viên thêm câu hỏi.",
+      );
     setQuestions(shuffle(data).slice(0, Number(form.count)));
     setChosen({});
     setMode("normal");
@@ -96,24 +111,37 @@ export default function StudentTest() {
   }
 
   async function submit() {
-    const unanswered = questions.filter((q) => chosen[q.id] === undefined).length;
-    if (unanswered > 0 && !window.confirm(`Còn ${unanswered} câu chưa làm. Vẫn nộp bài?`)) return;
+    const unanswered = questions.filter(
+      (q) => chosen[q.id] === undefined,
+    ).length;
+    if (
+      unanswered > 0 &&
+      !window.confirm(`Còn ${unanswered} câu chưa làm. Vẫn nộp bài?`)
+    )
+      return;
 
     setBusy(true);
     setError("");
     const topic =
-      mode === "assignment" ? assignment.title
-      : mode === "remedial" ? "Bổ trợ"
-      : mode === "ai" ? "Tự luyện AI"
-      : form.topic || null;
-    const grade = mode === "normal" ? Number(form.grade) : (questions[0]?.grade ?? null);
+      mode === "assignment"
+        ? assignment.title
+        : mode === "remedial"
+          ? "Bổ trợ"
+          : mode === "ai"
+            ? "Tự luyện AI"
+            : form.topic || null;
+    const grade =
+      mode === "normal" ? Number(form.grade) : (questions[0]?.grade ?? null);
 
     const { data, error } = await supabase.rpc("submit_attempt", {
       p_source: mode === "ai" ? "ai_self" : "class",
       p_assignment: mode === "assignment" ? assignment.id : null,
       p_topic: topic,
       p_grade: grade,
-      p_answers: questions.map((q) => ({ question_id: q.id, chosen: chosen[q.id] ?? null })),
+      p_answers: questions.map((q) => ({
+        question_id: q.id,
+        chosen: chosen[q.id] ?? null,
+      })),
     });
     setBusy(false);
     if (error) return setError(error.message);
@@ -134,15 +162,25 @@ export default function StudentTest() {
         <form className="card form" onSubmit={start}>
           <label>
             Lớp
-            <select value={form.grade} onChange={(e) => setForm({ ...form, grade: e.target.value, topic: "" })}>
+            <select
+              value={form.grade}
+              onChange={(e) =>
+                setForm({ ...form, grade: e.target.value, topic: "" })
+              }
+            >
               {[6, 7, 8, 9].map((g) => (
-                <option key={g} value={g}>{g}</option>
+                <option key={g} value={g}>
+                  {g}
+                </option>
               ))}
             </select>
           </label>
           <label className="grow">
             Chủ đề
-            <select value={form.topic} onChange={(e) => setForm({ ...form, topic: e.target.value })}>
+            <select
+              value={form.topic}
+              onChange={(e) => setForm({ ...form, topic: e.target.value })}
+            >
               <option value="">Tất cả chủ đề</option>
               {topics.map((t) => (
                 <option key={t}>{t}</option>
@@ -159,7 +197,9 @@ export default function StudentTest() {
               onChange={(e) => setForm({ ...form, count: e.target.value })}
             />
           </label>
-          <button type="submit" disabled={busy}>Bắt đầu</button>
+          <button type="submit" disabled={busy}>
+            Bắt đầu
+          </button>
         </form>
         <p className="muted">Hiện có {available} câu hỏi phù hợp.</p>
         {error && <p className="error">{error}</p>}
@@ -171,14 +211,22 @@ export default function StudentTest() {
     return (
       <div className="page">
         <h1>
-          {mode === "assignment" ? assignment.title
-            : mode === "remedial" ? "Bài bổ trợ"
-            : mode === "ai" ? "Tự luyện với AI"
-            : "Bài luyện tập"}
+          {mode === "assignment"
+            ? assignment.title
+            : mode === "remedial"
+              ? "Bài bổ trợ"
+              : mode === "ai"
+                ? "Tự luyện với AI"
+                : "Bài luyện tập"}
         </h1>
-        {mode === "assignment" && assignment.description && <p className="muted">{assignment.description}</p>}
+        {mode === "assignment" && assignment.description && (
+          <p className="muted">{assignment.description}</p>
+        )}
         {mode === "ai" && (
-          <p className="notice">Câu hỏi do AI tạo, chưa qua giáo viên duyệt. Hãy đối chiếu với kiến thức đã học.</p>
+          <p className="notice">
+            Câu hỏi do AI tạo, chưa qua giáo viên duyệt. Hãy đối chiếu với kiến
+            thức đã học.
+          </p>
         )}
         {questions.map((q, idx) => (
           <div className="card" key={q.id}>
@@ -186,7 +234,10 @@ export default function StudentTest() {
               Câu {idx + 1}. <MathText text={q.question} />
             </p>
             {q.options.map((o, i) => (
-              <label className={`choice ${chosen[q.id] === i ? "picked" : ""}`} key={i}>
+              <label
+                className={`choice ${chosen[q.id] === i ? "picked" : ""}`}
+                key={i}
+              >
                 <input
                   type="radio"
                   name={q.id}
@@ -216,13 +267,20 @@ export default function StudentTest() {
           {fmtPoints(result.points)}
           <small>/10</small>
         </div>
-        <p className="muted">{result.score}/{result.total} câu đúng</p>
+        <p className="muted">
+          {result.score}/{result.total} câu đúng
+        </p>
       </div>
       {mode === "assignment" && (
-        <p className="notice">Điểm đã được ghi nhận cho bài tập. Nếu bài còn lượt làm, điểm cao nhất sẽ được tính.</p>
+        <p className="notice">
+          Điểm đã được ghi nhận cho bài tập. Nếu bài còn lượt làm, điểm cao nhất
+          sẽ được tính.
+        </p>
       )}
       {mode === "ai" && (
-        <p className="muted">Bài tự luyện AI không được tính vào báo cáo và bảng điểm của lớp.</p>
+        <p className="muted">
+          Bài tự luyện AI không được tính vào báo cáo và bảng điểm của lớp.
+        </p>
       )}
 
       <h2>Theo từng kỹ năng</h2>
@@ -230,7 +288,9 @@ export default function StudentTest() {
         {skillSummary(result.rows).map(([skill, s]) => (
           <p key={skill} className="skill">
             <span>{skill}</span>
-            <b>{s.correct}/{s.total} câu</b>
+            <b>
+              {s.correct}/{s.total} câu
+            </b>
           </p>
         ))}
       </div>
@@ -243,11 +303,16 @@ export default function StudentTest() {
           </p>
           <p className={r.correct ? "ok" : "bad"}>
             {r.correct ? "Đúng" : "Sai"} · Bạn chọn:{" "}
-            {r.chosen === null ? "chưa chọn" : <MathText text={r.question.options[r.chosen]} />}
+            {r.chosen === null ? (
+              "chưa chọn"
+            ) : (
+              <MathText text={r.question.options[r.chosen]} />
+            )}
           </p>
           {!r.correct && (
             <p className="muted">
-              Đáp án đúng: <MathText text={r.question.options[r.question.answer]} />
+              Đáp án đúng:{" "}
+              <MathText text={r.question.options[r.question.answer]} />
             </p>
           )}
           <p className="expl">
@@ -257,7 +322,9 @@ export default function StudentTest() {
       ))}
       <div className="row">
         {mode === "assignment" ? (
-          <Link className="btn" to="/student/assignments">Về danh sách bài tập</Link>
+          <Link className="btn" to="/student/assignments">
+            Về danh sách bài tập
+          </Link>
         ) : (
           <button
             onClick={() => {
@@ -269,7 +336,9 @@ export default function StudentTest() {
             Làm bài khác
           </button>
         )}
-        <Link className="btn ghost" to="/student/report">Xem báo cáo</Link>
+        <Link className="btn ghost" to="/student/report">
+          Xem báo cáo
+        </Link>
       </div>
     </div>
   );

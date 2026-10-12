@@ -35,29 +35,31 @@ export default function StudentReport() {
   const [ai, setAi] = useState(null);
   const [aiLoading, setAiLoading] = useState(false);
   const navigate = useNavigate();
-const [plan, setPlan] = useState(null);
-const [planLoading, setPlanLoading] = useState(false);
+  const [plan, setPlan] = useState(null);
+  const [planLoading, setPlanLoading] = useState(false);
   useEffect(() => {
-  (async () => {
-    const [a, t] = await Promise.all([
-      supabase
-        .from("answers")
-        .select("skill_tag, level, correct, attempt_id, question_id, attempts!inner(source)")
-        .eq("attempts.source", "class"),
-      supabase
-        .from("attempts")
-        .select("id, points, score, total, topic, created_at")
-        .eq("source", "class")
-        .order("created_at", { ascending: false }),
-    ]);
-    const err = a.error || t.error;
-    if (err) setError(err.message);
-    else {
-      setRows(a.data);
-      setAttemptList(t.data);
-    }
-  })();
-}, []);
+    (async () => {
+      const [a, t] = await Promise.all([
+        supabase
+          .from("answers")
+          .select(
+            "skill_tag, level, correct, attempt_id, question_id, attempts!inner(source)",
+          )
+          .eq("attempts.source", "class"),
+        supabase
+          .from("attempts")
+          .select("id, points, score, total, topic, created_at")
+          .eq("source", "class")
+          .order("created_at", { ascending: false }),
+      ]);
+      const err = a.error || t.error;
+      if (err) setError(err.message);
+      else {
+        setRows(a.data);
+        setAttemptList(t.data);
+      }
+    })();
+  }, []);
 
   const stats = useMemo(() => {
     if (!rows) return [];
@@ -98,52 +100,62 @@ const [planLoading, setPlanLoading] = useState(false);
     }
   }
   async function buildPlan() {
-  setPlanLoading(true);
-  setError("");
-  try {
-    const picked = stats.filter((s) => s.skill_tag !== "Khác").slice(0, 3);
-    if (picked.length === 0) throw new Error("Chưa có kỹ năng nào để tạo bài bổ trợ.");
+    setPlanLoading(true);
+    setError("");
+    try {
+      const picked = stats.filter((s) => s.skill_tag !== "Khác").slice(0, 3);
+      if (picked.length === 0)
+        throw new Error("Chưa có kỹ năng nào để tạo bài bổ trợ.");
 
-    const correctIds = new Set(rows.filter((r) => r.correct && r.question_id).map((r) => r.question_id));
-    const seenIds = new Set(rows.filter((r) => r.question_id).map((r) => r.question_id));
+      const correctIds = new Set(
+        rows
+          .filter((r) => r.correct && r.question_id)
+          .map((r) => r.question_id),
+      );
+      const seenIds = new Set(
+        rows.filter((r) => r.question_id).map((r) => r.question_id),
+      );
 
-    const { data, error } = await supabase
-      .from("questions")
-      .select("*")
-      .eq("status", "approved")
-      .in("skill_tag", picked.map((s) => s.skill_tag));
-    if (error) throw new Error(error.message);
+      const { data, error } = await supabase
+        .from("questions")
+        .select("*")
+        .eq("status", "approved")
+        .in(
+          "skill_tag",
+          picked.map((s) => s.skill_tag),
+        );
+      if (error) throw new Error(error.message);
 
-    const items = picked.map((s) => {
-      const targets = targetLevels(s.rate);
-      const pool = data
-        .filter((q) => q.skill_tag === s.skill_tag && !correctIds.has(q.id))
-        .map((q) => ({
-          q,
-          d: levelDistance(q.level, targets),
-          seen: seenIds.has(q.id) ? 1 : 0,
-          r: Math.random(),
-        }))
-        .sort((a, b) => a.d - b.d || a.seen - b.seen || a.r - b.r);
-      return {
-        skill_tag: s.skill_tag,
-        rate: s.rate,
-        targets,
-        questions: pool.slice(0, QUOTA).map((x) => x.q),
-      };
-    });
-    setPlan(items);
-  } catch (e) {
-    setError(e.message);
-  } finally {
-    setPlanLoading(false);
+      const items = picked.map((s) => {
+        const targets = targetLevels(s.rate);
+        const pool = data
+          .filter((q) => q.skill_tag === s.skill_tag && !correctIds.has(q.id))
+          .map((q) => ({
+            q,
+            d: levelDistance(q.level, targets),
+            seen: seenIds.has(q.id) ? 1 : 0,
+            r: Math.random(),
+          }))
+          .sort((a, b) => a.d - b.d || a.seen - b.seen || a.r - b.r);
+        return {
+          skill_tag: s.skill_tag,
+          rate: s.rate,
+          targets,
+          questions: pool.slice(0, QUOTA).map((x) => x.q),
+        };
+      });
+      setPlan(items);
+    } catch (e) {
+      setError(e.message);
+    } finally {
+      setPlanLoading(false);
+    }
   }
-}
 
-function startRemedial() {
-  const questions = plan.flatMap((p) => p.questions);
-  navigate("/student", { state: { remedial: questions } });
-}
+  function startRemedial() {
+    const questions = plan.flatMap((p) => p.questions);
+    navigate("/student", { state: { remedial: questions } });
+  }
   if (!rows && !error) return <p className="page muted">Đang tải...</p>;
 
   if (rows && rows.length === 0) {
@@ -152,7 +164,9 @@ function startRemedial() {
         <h1>Báo cáo của tôi</h1>
         <div className="card">
           <p>Bạn chưa có bài làm nào để phân tích.</p>
-          <Link className="btn" to="/student">Làm bài ngay</Link>
+          <Link className="btn" to="/student">
+            Làm bài ngay
+          </Link>
         </div>
       </div>
     );
@@ -164,36 +178,56 @@ function startRemedial() {
       {error && <p className="error">{error}</p>}
 
       <div className="card summary">
-  <div><b>{attemptList.length}</b><span>lượt làm bài</span></div>
-  <div><b>{rows?.length ?? 0}</b><span>câu đã làm</span></div>
-  <div>
-    <b>
-      {attemptList.length
-        ? fmtPoints(attemptList.reduce((n, a) => n + Number(a.points), 0) / attemptList.length)
-        : "—"}
-    </b>
-    <span>điểm trung bình</span>
-  </div>
-</div>
+        <div>
+          <b>{attemptList.length}</b>
+          <span>lượt làm bài</span>
+        </div>
+        <div>
+          <b>{rows?.length ?? 0}</b>
+          <span>câu đã làm</span>
+        </div>
+        <div>
+          <b>
+            {attemptList.length
+              ? fmtPoints(
+                  attemptList.reduce((n, a) => n + Number(a.points), 0) /
+                    attemptList.length,
+                )
+              : "—"}
+          </b>
+          <span>điểm trung bình</span>
+        </div>
+      </div>
 
-<h2>Điểm các lần làm gần đây</h2>
-<div className="card tablewrap">
-  <table className="tbl">
-    <thead>
-      <tr><th>Ngày</th><th>Nội dung</th><th>Số câu đúng</th><th>Điểm</th></tr>
-    </thead>
-    <tbody>
-      {attemptList.slice(0, 10).map((a) => (
-        <tr key={a.id}>
-          <td>{new Date(a.created_at).toLocaleDateString("vi-VN")}</td>
-          <td>{a.topic || "Tất cả chủ đề"}</td>
-          <td>{a.score}/{a.total}</td>
-          <td><span className={`badge ${pointsClass(Number(a.points))}`}>{fmtPoints(a.points)}</span></td>
-        </tr>
-      ))}
-    </tbody>
-  </table>
-</div>
+      <h2>Điểm các lần làm gần đây</h2>
+      <div className="card tablewrap">
+        <table className="tbl">
+          <thead>
+            <tr>
+              <th>Ngày</th>
+              <th>Nội dung</th>
+              <th>Số câu đúng</th>
+              <th>Điểm</th>
+            </tr>
+          </thead>
+          <tbody>
+            {attemptList.slice(0, 10).map((a) => (
+              <tr key={a.id}>
+                <td>{new Date(a.created_at).toLocaleDateString("vi-VN")}</td>
+                <td>{a.topic || "Tất cả chủ đề"}</td>
+                <td>
+                  {a.score}/{a.total}
+                </td>
+                <td>
+                  <span className={`badge ${pointsClass(Number(a.points))}`}>
+                    {fmtPoints(a.points)}
+                  </span>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
 
       <h2>Theo từng kỹ năng (yếu nhất ở trên)</h2>
       <div className="card">
@@ -201,10 +235,15 @@ function startRemedial() {
           <div className="skillrow" key={s.skill_tag}>
             <div className="skillhead">
               <span>{s.skill_tag}</span>
-              <b>{s.correct}/{s.total} câu · {s.rate}%</b>
+              <b>
+                {s.correct}/{s.total} câu · {s.rate}%
+              </b>
             </div>
             <div className="bar">
-              <div className={`fill ${barClass(s.rate)}`} style={{ width: `${s.rate}%` }} />
+              <div
+                className={`fill ${barClass(s.rate)}`}
+                style={{ width: `${s.rate}%` }}
+              />
             </div>
             <p className="muted small">
               {suggestLevel(s.rate)}
@@ -213,35 +252,43 @@ function startRemedial() {
           </div>
         ))}
       </div>
-        <h2>Bài tập bổ trợ</h2>
-{!plan && (
-  <button onClick={buildPlan} disabled={planLoading}>
-    {planLoading ? "Đang chọn bài..." : "Tạo bài bổ trợ cho tôi"}
-  </button>
-)}
-{plan && (
-  <div className="card">
-    {plan.map((p) => (
-      <div className="planitem" key={p.skill_tag}>
-        <b>{p.skill_tag}</b>
-        <p className="muted small">
-          Tỉ lệ đúng hiện tại {p.rate}% · Mức độ gợi ý: {p.targets.join(" / ")} · {p.questions.length} câu
-        </p>
-        {p.questions.length < QUOTA && (
-          <p className="muted small">
-            Ngân hàng chưa đủ câu cho kỹ năng này, hãy nhờ giáo viên bổ sung thêm.
-          </p>
-        )}
-      </div>
-    ))}
-    <div className="row">
-      <button onClick={startRemedial} disabled={plan.every((p) => p.questions.length === 0)}>
-        Bắt đầu làm bài bổ trợ ({plan.reduce((n, p) => n + p.questions.length, 0)} câu)
-      </button>
-      <button className="ghost" onClick={() => setPlan(null)}>Chọn lại</button>
-    </div>
-  </div>
-)}
+      <h2>Bài tập bổ trợ</h2>
+      {!plan && (
+        <button onClick={buildPlan} disabled={planLoading}>
+          {planLoading ? "Đang chọn bài..." : "Tạo bài bổ trợ cho tôi"}
+        </button>
+      )}
+      {plan && (
+        <div className="card">
+          {plan.map((p) => (
+            <div className="planitem" key={p.skill_tag}>
+              <b>{p.skill_tag}</b>
+              <p className="muted small">
+                Tỉ lệ đúng hiện tại {p.rate}% · Mức độ gợi ý:{" "}
+                {p.targets.join(" / ")} · {p.questions.length} câu
+              </p>
+              {p.questions.length < QUOTA && (
+                <p className="muted small">
+                  Ngân hàng chưa đủ câu cho kỹ năng này, hãy nhờ giáo viên bổ
+                  sung thêm.
+                </p>
+              )}
+            </div>
+          ))}
+          <div className="row">
+            <button
+              onClick={startRemedial}
+              disabled={plan.every((p) => p.questions.length === 0)}
+            >
+              Bắt đầu làm bài bổ trợ (
+              {plan.reduce((n, p) => n + p.questions.length, 0)} câu)
+            </button>
+            <button className="ghost" onClick={() => setPlan(null)}>
+              Chọn lại
+            </button>
+          </div>
+        </div>
+      )}
       <h2>Nhận xét của AI</h2>
       {!ai && (
         <button onClick={runAI} disabled={aiLoading}>

@@ -30,7 +30,7 @@ export default function StudentAIPractice() {
           ...form,
           grade: Number(form.grade),
           count: Number(form.count),
-        })
+        }),
       );
     } catch (err) {
       setError(err.message);
@@ -47,17 +47,23 @@ export default function StudentAIPractice() {
     <div className="page">
       <h1>Luyện tập với AI</h1>
       <p className="notice">
-        Câu hỏi ở đây do AI soạn và <b>chưa qua giáo viên duyệt</b>. Hệ thống đã cho AI tự giải lại để loại câu
-        đáp án không khớp, nhưng vẫn có thể có sai sót. Nếu thấy lời giải lạ, hãy hỏi giáo viên. Bài tự luyện
-        không được tính vào báo cáo của lớp. Mỗi ngày bạn tạo được tối đa 20 câu.
+        Câu hỏi ở đây do AI soạn và <b>chưa qua giáo viên duyệt</b>. Hệ thống đã
+        cho AI tự giải lại để loại câu đáp án không khớp, nhưng vẫn có thể có
+        sai sót. Nếu thấy lời giải lạ, hãy hỏi giáo viên. Bài tự luyện không
+        được tính vào báo cáo của lớp. Mỗi ngày bạn tạo được tối đa 20 câu.
       </p>
 
       <form className="card form" onSubmit={generate}>
         <label>
           Lớp
-          <select value={form.grade} onChange={(e) => setForm({ ...form, grade: e.target.value })}>
+          <select
+            value={form.grade}
+            onChange={(e) => setForm({ ...form, grade: e.target.value })}
+          >
             {[6, 7, 8, 9].map((x) => (
-              <option key={x} value={x}>{x}</option>
+              <option key={x} value={x}>
+                {x}
+              </option>
             ))}
           </select>
         </label>
@@ -73,7 +79,10 @@ export default function StudentAIPractice() {
         </label>
         <label>
           Mức độ
-          <select value={form.level} onChange={(e) => setForm({ ...form, level: e.target.value })}>
+          <select
+            value={form.level}
+            onChange={(e) => setForm({ ...form, level: e.target.value })}
+          >
             {LEVELS.map((l) => (
               <option key={l}>{l}</option>
             ))}
@@ -100,9 +109,12 @@ export default function StudentAIPractice() {
         <div className="card">
           <h3>Đã sẵn sàng: {result.kept} câu</h3>
           <p className="muted">
-            AI soạn {result.generated} câu, giữ lại {result.kept} câu sau khi tự kiểm tra chéo
-            {result.generated > result.kept ? ` (đã loại ${result.generated - result.kept} câu không chắc chắn)` : ""}.
-            Hôm nay bạn còn tạo được {result.remaining} câu.
+            AI soạn {result.generated} câu, giữ lại {result.kept} câu sau khi tự
+            kiểm tra chéo
+            {result.generated > result.kept
+              ? ` (đã loại ${result.generated - result.kept} câu không chắc chắn)`
+              : ""}
+            . Hôm nay bạn còn tạo được {result.remaining} câu.
           </p>
           <button onClick={start}>Bắt đầu làm bài</button>
         </div>

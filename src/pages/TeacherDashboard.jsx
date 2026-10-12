@@ -98,8 +98,10 @@ export default function TeacherDashboard() {
       (a, b) =>
         (a.rate === null) - (b.rate === null) || (a.rate ?? 0) - (b.rate ?? 0),
     );
-const withPts = rows.filter((r) => r.points !== null);
-const avgPoints = withPts.length ? withPts.reduce((n, r) => n + r.points, 0) / withPts.length : null;
+    const withPts = rows.filter((r) => r.points !== null);
+    const avgPoints = withPts.length
+      ? withPts.reduce((n, r) => n + r.points, 0) / withPts.length
+      : null;
     const cs = {};
     skills.forEach((r) => {
       const k = r.skill_tag || "Khác";
@@ -221,7 +223,10 @@ const avgPoints = withPts.length ? withPts.reduce((n, r) => n + r.points, 0) / w
         </div>
         <div>
           <b>{view.accuracy === null ? "—" : `${view.accuracy}%`}</b>
-          <div><b>{fmtPoints(view.avgPoints)}</b><span>điểm TB</span></div>
+          <div>
+            <b>{fmtPoints(view.avgPoints)}</b>
+            <span>điểm TB</span>
+          </div>
         </div>
       </div>
 
