@@ -28,6 +28,16 @@ export default async (req) => {
     if (fullName.length < 2) return json({ error: "Hãy nhập họ và tên." }, 400);
 
     const admin = adminClient();
+        if (role === "student") {
+      const { data: st } = await admin
+        .from("app_settings")
+        .select("value")
+        .eq("key", "allow_student_signup")
+        .maybeSingle();
+      if (st?.value === "false") {
+        return json({ error: "Học sinh không tự đăng ký được. Hãy nhờ giáo viên tạo tài khoản cho bạn." }, 403);
+      }
+    }
 
         if (role === "teacher") {
       const { data: s, error: sErr } = await admin
