@@ -1,7 +1,6 @@
-import { useEffect, useState } from "react";
-import { HashRouter, Routes, Route, NavLink, Link, Navigate } from "react-router-dom";
+import { HashRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./AuthContext";
-import { supabase } from "./supabase";
+import Navbar from "./components/Navbar";
 import RequireRole from "./components/RequireRole";
 import ErrorBoundary from "./components/ErrorBoundary";
 import Home from "./pages/Home";
@@ -20,74 +19,6 @@ import StudentAIPractice from "./pages/StudentAIPractice";
 import StudentAssignments from "./pages/StudentAssignments";
 import StudentRewards from "./pages/StudentRewards";
 import Leaderboard from "./pages/Leaderboard";
-
-function Navbar() {
-  const { session, profile, signOut } = useAuth();
-  const [toast, setToast] = useState("");
-  const uid = session?.user?.id;
-  const role = profile?.role;
-  const staff = role === "teacher" || role === "admin";
-
-  // Học sinh đăng nhập lần đầu trong ngày thì tự được điểm danh nhận xu
-  useEffect(() => {
-    if (!uid || role !== "student") return;
-    supabase.rpc("claim_daily_checkin").then(({ data }) => {
-      if (data?.claimed) {
-        setToast(`Điểm danh thành công: +${data.coins} xu (chuỗi ${data.streak} ngày liên tiếp)`);
-        setTimeout(() => setToast(""), 6000);
-      }
-    });
-  }, [uid, role]);
-
-  return (
-    <>
-      <nav className="nav">
-        <Link to="/" className="brand">MathGenius</Link>
-
-        {staff && (
-          <>
-            <NavLink to="/teacher" end>Câu hỏi</NavLink>
-            <NavLink to="/teacher/dashboard">Tổng quan</NavLink>
-            <NavLink to="/teacher/assignments">Giao bài</NavLink>
-            <NavLink to="/teacher/grades">Bảng điểm</NavLink>
-            <NavLink to="/teacher/accounts">Tài khoản</NavLink>
-            <NavLink to="/teacher/leaderboard">Xếp hạng</NavLink>
-            <NavLink to="/teacher/rewards">Quà tặng</NavLink>
-          </>
-        )}
-        {role === "admin" && <NavLink to="/admin">Quản trị</NavLink>}
-
-        {role === "student" && (
-          <>
-            <NavLink to="/student" end>Làm bài</NavLink>
-            <NavLink to="/student/assignments">Bài tập</NavLink>
-            <NavLink to="/student/ai">Luyện AI</NavLink>
-            <NavLink to="/student/report">Báo cáo</NavLink>
-            <NavLink to="/student/leaderboard">Xếp hạng</NavLink>
-            <NavLink to="/student/rewards">Quà và xu</NavLink>
-          </>
-        )}
-
-        <span className="spacer" />
-        {session ? (
-          <>
-            <span className="muted">
-              {profile?.full_name}{profile?.class_name ? ` · ${profile.class_name}` : ""}
-            </span>
-            <NavLink to="/change-password">Đổi mật khẩu</NavLink>
-            <button className="ghost" onClick={signOut}>Đăng xuất</button>
-          </>
-        ) : (
-          <>
-            <NavLink to="/login">Đăng nhập</NavLink>
-            <NavLink to="/register">Đăng ký</NavLink>
-          </>
-        )}
-      </nav>
-      {toast && <div className="toast">{toast}</div>}
-    </>
-  );
-}
 
 function RoleRedirect() {
   const { session, profile, busy } = useAuth();
