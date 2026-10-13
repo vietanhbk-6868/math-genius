@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabase";
 import { fmtPoints, pointsClass } from "../score";
-
+import { useAuth } from "../AuthContext";
+import { loadMyClasses } from "../myClasses";
 // Lấy hết dữ liệu dù hơn 1000 dòng
 async function fetchAll(build) {
   const size = 1000;
@@ -21,6 +22,7 @@ async function fetchAll(build) {
 const givenName = (n) => (n || "").trim().split(/\s+/).slice(-1)[0] || "";
 
 export default function TeacherGrades() {
+  const { profile } = useAuth();
   const [classes, setClasses] = useState([]);
   const [students, setStudents] = useState([]);
   const [assignments, setAssignments] = useState([]);
@@ -56,11 +58,13 @@ export default function TeacherGrades() {
         ]);
         const err = c.error || s.error || a.error;
         if (err) throw err;
-        setClasses(c.data.map((x) => x.name));
+        const mine = await loadMyClasses(profile?.role);
+        setClasses(mine);
+        setCls(mine[0] || "");
         setStudents(s.data);
         setAssignments(a.data);
         setAttempts(t);
-        setCls(c.data[0]?.name || "");
+        
       } catch (e) {
         setError(e.message);
       } finally {

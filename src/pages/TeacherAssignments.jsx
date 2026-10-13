@@ -1,7 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabase";
 import MathText from "../components/MathText";
-
+import { useAuth } from "../AuthContext";
+import { loadMyClasses } from "../myClasses";
 const LEVELS = ["nhận biết", "thông hiểu", "vận dụng", "vận dụng cao"];
 const MAX_Q = 50;
 
@@ -26,6 +27,7 @@ function shuffle(arr) {
 }
 
 export default function TeacherAssignments() {
+  const { profile } = useAuth();
   const [classes, setClasses] = useState([]);
   const [bank, setBank] = useState([]);
   const [list, setList] = useState([]);
@@ -71,7 +73,7 @@ export default function TeacherAssignments() {
     ]);
     const err = c.error || q.error || a.error || p.error || t.error;
     if (err) return setError(err.message);
-    setClasses(c.data.map((x) => x.name));
+    setClasses(await loadMyClasses(profile?.role));
     setBank(q.data);
     setList(a.data);
     setStudents(p.data);

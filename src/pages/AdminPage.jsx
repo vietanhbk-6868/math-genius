@@ -12,6 +12,7 @@ const NAV = [
   { id: "overview", icon: "📊", label: "Tổng quan" },
   { id: "progress", icon: "📈", label: "Tiến độ học sinh" },
   { id: "classes", icon: "🏫", label: "Lớp học" },
+  { id: "assign", icon: "🧑‍🏫", label: "Phân công" },
   { id: "users", icon: "👥", label: "Người dùng" },
   { id: "settings", icon: "⚙️", label: "Cài đặt" },
 ];
@@ -103,6 +104,8 @@ function VBars({ data }) {
 
 export default function AdminPage() {
   const { session } = useAuth();
+  const [tcs, setTcs] = useState([]);
+const [asgTeacher, setAsgTeacher] = useState("");
   const [tab, setTab] = useState("overview");
   const [classes, setClasses] = useState([]);
   const [users, setUsers] = useState([]);
@@ -118,32 +121,27 @@ export default function AdminPage() {
   const [error, setError] = useState("");
 
   async function load() {
-    const [c, u, s, a, k] = await Promise.all([
-      supabase.from("classes").select("*").order("name"),
-      supabase
-        .from("profiles")
-        .select("id, full_name, role, class_name, username")
-        .order("full_name"),
-      supabase
-        .from("app_settings")
-        .select("value")
-        .eq("key", "teacher_code")
-        .maybeSingle(),
-      supabase
-        .from("attempts")
-        .select("id, student_id, score, total, points, topic, created_at")
-        .eq("source", "class")
-        .order("created_at", { ascending: true }),
-      supabase.from("student_skill_stats").select("*"),
-    ]);
-    const err = c.error || u.error || s.error || a.error || k.error;
-    if (err) return setError(err.message);
-    setClasses(c.data ?? []);
-    setUsers(u.data ?? []);
-    setTeacherCode(s.data?.value ?? "");
-    setAttempts(a.data ?? []);
-    setSkillRows(k.data ?? []);
-  }
+  const [c, u, s, a, k, t] = await Promise.all([
+    supabase.from("classes").select("*").order("name"),
+    supabase.from("profiles").select("id, full_name, role, class_name, username").order("full_name"),
+    supabase.from("app_settings").select("value").eq("key", "teacher_code").maybeSingle(),
+    supabase
+      .from("attempts")
+      .select("id, student_id, score, total, points, topic, created_at")
+      .eq("source", "class")
+      .order("created_at", { ascending: true }),
+    supabase.from("student_skill_stats").select("*"),
+    supabase.from("teacher_classes").select("teacher_id, class_name"),
+  ]);
+  const err = c.error || u.error || s.error || a.error || k.error || t.error;
+  if (err) return setError(err.message);
+  setClasses(c.data ?? []);
+  setUsers(u.data ?? []);
+  setTeacherCode(s.data?.value ?? "");
+  setAttempts(a.data ?? []);
+  setSkillRows(k.data ?? []);
+  setTcs(t.data ?? []);
+}
 
   useEffect(() => {
     load();
@@ -347,6 +345,26 @@ export default function AdminPage() {
     flash("Đã lưu mã giáo viên mới.");
   }
 
+  const teachers = users.filter((u) => u.role === "teacher");
+const teachesClass = (tid, cn) => tcs.some((x) => x.teacher_id === tid && x.class_name === cn);
+
+async function toggleTeaching(tid, cn) {
+  const { error } = teachesClass(tid, cn)
+    ? await supabase.from("teacher_classes").delete().eq("teacher_id", tid).eq("class_name", cn)
+    : await supabase.from("teacher_classes").insert({ teacher_id: tid, class_name: cn });
+  if (error) return setError(error.message);
+  load();
+}
+
+async function setHomeroom(classId, tid) {
+  const { error } = await supabase
+    .from("classes")
+    .update({ homeroom_teacher_id: tid || null })
+    .eq("id", classId);
+  if (error) return setError(error.message);
+  flash("Đã cập nhật giáo viên chủ nhiệm.");
+  load();
+}
   const filteredUsers = users.filter(
     (u) =>
       (!roleFilter || u.role === roleFilter) &&
@@ -603,7 +621,78 @@ export default function AdminPage() {
             </div>
           </>
         )}
+        {/* ===== PHÂN CÔNG ===== */}
+{tab === "assign" && (
+  <>
+    <div className="card form">
+      <label className="grow">
+        Chọn giáo viên để phân lớp đang dạy
+        <select value={asgTeacher} onChange={(e) => setAsgTeacher(e.target.value)}>
+          <option value="">Chọn giáo viên</option>
+          {teachers.map((t) => (
+            <option key={t.id} value={t.id}>{t.full_name}</option>
+          ))}
+        </select>
+      </label>
+    </div>
 
+    {asgTeacher && (
+      <div className="card stack">
+        <h3>Lớp đang dạy</h3>
+        {classes.length === 0 && <p className="muted">Chưa có lớp nào.</p>}
+        <div className="row">
+          {classes.map((c) => {
+            const isHome = c.homeroom_teacher_id === asgTeacher;
+            return (
+              <label className="cls-check" key={c.id}>
+                <input
+                  type="checkbox"
+                  checked={isHome || teachesClass(asgTeacher, c.name)}
+                  disabled={isHome}
+                  onChange={() => toggleTeaching(asgTeacher, c.name)}
+                />
+                {c.name}{isHome ? " (chủ nhiệm)" : ""}
+              </label>
+            );
+          })}
+        </div>
+        <p className="muted small">
+          Thay đổi được lưu ngay. Giáo viên chỉ thấy học sinh, điểm và bài tập của những lớp được phân công.
+        </p>
+      </div>
+    )}
+
+    <div className="card tablewrap">
+      <h3>Giáo viên chủ nhiệm từng lớp</h3>
+      <table className="tbl">
+        <thead>
+          <tr><th>Lớp</th><th>Chủ nhiệm</th><th>Giáo viên đang dạy lớp</th></tr>
+        </thead>
+        <tbody>
+          {classes.map((c) => (
+            <tr key={c.id}>
+              <td><b>{c.name}</b></td>
+              <td>
+                <select value={c.homeroom_teacher_id || ""} onChange={(e) => setHomeroom(c.id, e.target.value)}>
+                  <option value="">Chưa có</option>
+                  {teachers.map((t) => (
+                    <option key={t.id} value={t.id}>{t.full_name}</option>
+                  ))}
+                </select>
+              </td>
+              <td className="muted">
+                {teachers
+                  .filter((t) => teachesClass(t.id, c.name) || c.homeroom_teacher_id === t.id)
+                  .map((t) => t.full_name)
+                  .join(", ") || "—"}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </>
+)}
         {/* ===== NGƯỜI DÙNG ===== */}
         {tab === "users" && (
           <>

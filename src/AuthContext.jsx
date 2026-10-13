@@ -32,8 +32,13 @@ export function AuthProvider({ children }) {
 
   const profile = uid && pstate.uid === uid ? pstate.data : null;
   const busy = loading || (!!uid && pstate.uid !== uid);
-
+  const refreshProfile = async () => {
+  if (!uid) return;
+  const { data } = await supabase.from("profiles").select("*").eq("id", uid).single();
+  setPstate({ uid, data: data ?? null });
+};
   const value = {
+    refreshProfile,
     session,
     profile,
     busy,

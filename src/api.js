@@ -22,3 +22,4 @@ export const diagnose = (stats, scope = "student", meta = null) =>
 export const generateStudentQuestions = (body) => postJSON("/api/student/generate", body);
 export const resetPassword = (userId, newPassword) =>
   postJSON("/api/admin/reset-password", { userId, newPassword });
+export const createStudents = (body) => postJSON("/api/teacher/create-students", body);

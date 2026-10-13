@@ -440,3 +440,18 @@ input[type="checkbox"] { all: revert; accent-color: var(--accent); }
 .tbl td.pt.low { color: #ff9fb0; }
 .tbl td.pt.mid { color: #ffd36b; }
 .tbl td.pt.high { color: #7df3c9; }
+textarea {
+  padding: 10px 12px;
+  min-height: 110px;
+  border: 1px solid rgba(0, 229, 255, 0.3);
+  border-radius: 12px;
+  font-size: 15px;
+  font-family: inherit;
+  background: var(--panel2);
+  color: var(--text);
+}
+textarea:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 1px var(--accent), 0 0 14px rgba(0, 229, 255, 0.45);
+}

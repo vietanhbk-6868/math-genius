@@ -20,11 +20,14 @@ export default async (req) => {
     }
 
     const admin = adminClient();
-    const { data: target } = await admin.from("profiles").select("role").eq("id", userId).maybeSingle();
+    const { data: target } = await admin.from("profiles").select("role, class_name").eq("id", userId).maybeSingle();
     if (!target) return json({ error: "Không tìm thấy tài khoản." }, 404);
 
     const allowed = auth.role === "admin" ? target.role !== "admin" : target.role === "student";
-    if (!allowed) return json({ error: "Bạn không được đổi mật khẩu của tài khoản này." }, 403);
+    if (auth.role === "teacher") {
+  const { data: ok } = await auth.sb.rpc("teaches_class", { p_class: target.class_name });
+  if (!ok) return json({ error: "Học sinh này không thuộc lớp bạn phụ trách." }, 403);
+}
 
     const { error } = await admin.auth.admin.updateUserById(userId, { password: pw });
     if (error) return json({ error: error.message }, 400);
