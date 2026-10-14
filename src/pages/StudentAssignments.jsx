@@ -54,30 +54,19 @@ export default function StudentAssignments() {
     })();
   }, []);
 
-  async function start(a) {
-    setBusyId(a.id);
-    setError("");
-    const { data, error } = await supabase
-      .from("questions")
-      .select("*")
-      .in("id", a.question_ids);
-    setBusyId(null);
-    if (error) return setError(error.message);
-    const order = Object.fromEntries(a.question_ids.map((id, i) => [id, i]));
-    const questions = [...data].sort((x, y) => order[x.id] - order[y.id]);
-    if (questions.length === 0)
-      return setError("Bài tập này chưa có câu hỏi hợp lệ.");
-    navigate("/student", {
-      state: {
-        assignment: {
-          id: a.id,
-          title: a.title,
-          description: a.description,
-          questions,
-        },
-      },
-    });
-  }
+ async function start(a) {
+  setBusyId(a.id);
+  setError("");
+  const { data, error } = await supabase.rpc("get_assignment_questions", { p_assignment: a.id });
+  setBusyId(null);
+  if (error) return setError(error.message);
+  if (!data?.questions?.length) return setError("Bài tập này chưa có câu hỏi.");
+  navigate("/student", {
+    state: {
+      assignment: { id: a.id, title: data.title, description: data.description, questions: data.questions },
+    },
+  });
+}
 
   if (!items && !error) return <p className="page muted">Đang tải...</p>;
 
@@ -108,7 +97,7 @@ export default function StudentAssignments() {
               )}
             </div>
             <div className="row" style={{ margin: "10px 0" }}>
-              <span className="tag">{a.question_ids.length} câu</span>
+              <span className="tag">{a.question_count} câu</span>
               <span className="tag">
                 Hạn nộp: {a.due_at ? fmtDue(a.due_at) : "không giới hạn"}
               </span>

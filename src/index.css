@@ -667,3 +667,35 @@ p.bad { color: #b91c1c; font-weight: 600; }
   .nav a.active, .choice.picked, .tbl tr.mine td { background: #fdf2f8; }
   .auth-bg { background: linear-gradient(135deg, #fff1c9, #ffe0ec, #dff6ff, #ece4ff); }
 }
+/* ===== Soạn đề kiểm tra ===== */
+.qedit { border-left: 4px solid var(--c5); }
+.qedit.warn { border-left-color: var(--warn); }
+.qedit.off { opacity: 0.55; }
+.qedit textarea { min-height: 70px; }
+.preview {
+  margin: 6px 0 10px;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #faf5ff;
+  border: 1px dashed #ddd6fe;
+  overflow-wrap: anywhere;
+}
+.optrow { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+.optrow input:not([type="radio"]) { flex: 1; min-width: 0; }
+.issues { list-style: none; margin: 8px 0; padding: 0; }
+.issues li {
+  margin: 4px 0;
+  padding: 6px 10px;
+  border-radius: 10px;
+  font-size: 14px;
+  color: #92400e;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+}
+.drop {
+  padding: 20px;
+  text-align: center;
+  border-radius: 16px;
+  border: 2px dashed #c4b5fd;
+  background: #faf5ff;
+}
