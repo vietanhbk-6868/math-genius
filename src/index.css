@@ -699,3 +699,28 @@ p.bad { color: #b91c1c; font-weight: 600; }
   border: 2px dashed #c4b5fd;
   background: #faf5ff;
 }
+/* ===== Tự luận ===== */
+.essay-box textarea { min-height: 160px; }
+.thumbs { display: flex; flex-wrap: wrap; gap: 10px; margin: 8px 0; }
+.thumb { position: relative; }
+.thumb img { width: 110px; height: 110px; object-fit: cover; border-radius: 12px; border: 1px solid var(--line); }
+.thumb button {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  width: 28px;
+  height: 28px;
+  min-height: 0;
+  padding: 0;
+  border-radius: 999px;
+  font-size: 13px;
+}
+.bigimgs img { max-width: 100%; border-radius: 12px; border: 1px solid var(--line); margin: 6px 0; }
+.studentans {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #f8fafc;
+  border: 1px solid #e5e7eb;
+}

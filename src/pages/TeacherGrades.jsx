@@ -50,7 +50,7 @@ export default function TeacherGrades() {
             supabase
               .from("attempts")
               .select(
-                "id, student_id, assignment_id, score, total, points, topic, source, created_at",
+                "id, student_id, assignment_id, score, total, points, topic, source, status, created_at",
               )
               .order("created_at", { ascending: true })
               .order("id"),
@@ -162,6 +162,7 @@ export default function TeacherGrades() {
         "Số câu đúng",
         "Tổng số câu",
         "Điểm",
+        "Trạng thái"
       ]);
       const nameOf = Object.fromEntries(sheet.rows.map((r) => [r.id, r]));
       const asgTitle = Object.fromEntries(
@@ -191,6 +192,7 @@ export default function TeacherGrades() {
             t.score,
             t.total,
             Number(t.points),
+            t.status === "pending" ? "Chờ chấm tự luận" : "Đã chấm"
           ]);
           row.getCell(5).numFmt = "dd/mm/yyyy hh:mm";
           row.getCell(8).numFmt = "0.0";
@@ -201,7 +203,7 @@ export default function TeacherGrades() {
         pattern: "solid",
         fgColor: { argb: "FFD9E8FF" },
       };
-      [28, 10, 36, 10, 20, 12, 12, 10].forEach(
+      [28, 10, 36, 10, 20, 12, 12, 10, 18].forEach(
         (w, i) => (ws2.getColumn(i + 1).width = w),
       );
 
