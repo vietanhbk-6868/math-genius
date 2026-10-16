@@ -19,7 +19,7 @@ import StudentAIPractice from "./pages/StudentAIPractice";
 import StudentAssignments from "./pages/StudentAssignments";
 import StudentRewards from "./pages/StudentRewards";
 import Leaderboard from "./pages/Leaderboard";
-
+import Footer from "./components/Footer";
 function RoleRedirect() {
   const { session, profile, busy } = useAuth();
   if (busy) return <p className="page muted">Đang tải...</p>;
@@ -66,6 +66,7 @@ export default function App() {
             <Route path="/admin" element={<RequireRole role="admin"><AdminPage /></RequireRole>} />
           </Routes>
         </ErrorBoundary>
+        <Footer />
       </AuthProvider>
     </HashRouter>
   );

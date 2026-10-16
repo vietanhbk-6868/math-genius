@@ -3,6 +3,7 @@ import { supabase } from "../supabase";
 import { useAuth } from "../AuthContext";
 import { resetPassword } from "../api";
 import { fmtPoints } from "../score";
+import { sortClassRows } from "../sortClasses";
 const ROLE_LABEL = {
   student: "Học sinh",
   teacher: "Giáo viên",
@@ -135,7 +136,7 @@ const [asgTeacher, setAsgTeacher] = useState("");
   ]);
   const err = c.error || u.error || s.error || a.error || k.error || t.error;
   if (err) return setError(err.message);
-  setClasses(c.data ?? []);
+  setClasses(sortClassRows(c.data ?? []));
   setUsers(u.data ?? []);
   setTeacherCode(s.data?.value ?? "");
   setAttempts(a.data ?? []);

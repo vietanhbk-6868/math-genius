@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "../supabase";
 import { diagnose, resetPassword } from "../api";
 import { fmtPoints } from "../score";
+import { sortClassNames } from "../sortClasses";
 const QUOTA = 4;
 const pct = (c, t) => (t ? Math.round((c / t) * 100) : null);
 
@@ -53,11 +54,10 @@ export default function TeacherDashboard() {
     })();
   }, []);
 
-  const classes = useMemo(
-    () =>
-      [...new Set(students.map((s) => s.class_name).filter(Boolean))].sort(),
-    [students],
-  );
+ const classes = useMemo(
+  () => sortClassNames([...new Set(students.map((s) => s.class_name).filter(Boolean))]),
+  [students]
+);
 
   const view = useMemo(() => {
     const list = students.filter(

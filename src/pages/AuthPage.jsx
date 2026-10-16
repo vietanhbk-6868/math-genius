@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../AuthContext";
 import { supabase } from "../supabase";
-
+import { sortClassNames } from "../sortClasses";
 function viMessage(msg) {
   if (msg.includes("Invalid login credentials"))
     return "Sai tên tài khoản hoặc mật khẩu.";
@@ -62,7 +62,7 @@ export default function AuthPage({ mode }) {
       .from("classes")
       .select("name")
       .order("name")
-      .then(({ data }) => setClasses((data || []).map((c) => c.name)));
+      .then(({ data }) => setClasses(sortClassNames((data || []).map((c) => c.name))));
   }, []);
 
   function flip(toRegister) {

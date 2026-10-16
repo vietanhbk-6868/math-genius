@@ -1,0 +1,20 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="480" height="480" viewBox="0 0 480 480">
+  <g font-family="Georgia, 'Times New Roman', serif" font-weight="bold">
+    <text x="28" y="84" font-size="58" fill="#ff3d81" transform="rotate(-12 28 84)">π</text>
+    <text x="176" y="62" font-size="46" fill="#8b5cf6">∑</text>
+    <text x="300" y="104" font-size="48" fill="#ff9f1c" transform="rotate(9 300 104)">√x</text>
+    <text x="410" y="56" font-size="40" fill="#1fd1ff">x²</text>
+    <text x="64" y="196" font-size="52" fill="#2ee6a6" transform="rotate(8 64 196)">∫</text>
+    <text x="170" y="176" font-size="30" fill="#ff3d81">a² + b² = c²</text>
+    <text x="360" y="190" font-size="46" fill="#8b5cf6" transform="rotate(-8 360 190)">%</text>
+    <text x="24" y="304" font-size="40" fill="#ff9f1c">≠</text>
+    <text x="110" y="330" font-size="44" fill="#1fd1ff" transform="rotate(10 110 330)">∞</text>
+    <text x="214" y="296" font-size="34" fill="#2ee6a6">f(x)</text>
+    <text x="318" y="330" font-size="50" fill="#ff3d81" transform="rotate(-10 318 330)">θ</text>
+    <text x="414" y="296" font-size="38" fill="#8b5cf6">÷</text>
+    <text x="40" y="430" font-size="36" fill="#1fd1ff">sin x</text>
+    <text x="156" y="448" font-size="48" fill="#ff9f1c" transform="rotate(7 156 448)">Δ</text>
+    <text x="262" y="426" font-size="40" fill="#2ee6a6">x = 2</text>
+    <text x="388" y="452" font-size="46" fill="#ff3d81" transform="rotate(-9 388 452)">±</text>
+  </g>
+</svg>
