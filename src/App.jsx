@@ -19,7 +19,8 @@ import StudentAIPractice from "./pages/StudentAIPractice";
 import StudentAssignments from "./pages/StudentAssignments";
 import StudentRewards from "./pages/StudentRewards";
 import Leaderboard from "./pages/Leaderboard";
-import Footer from "./components/Footer";
+import TeacherGrading from "./pages/TeacherGrading";
+import Footer from './components/Footer'
 function RoleRedirect() {
   const { session, profile, busy } = useAuth();
   if (busy) return <p className="page muted">Đang tải...</p>;
@@ -62,11 +63,12 @@ export default function App() {
             <Route path="/teacher/accounts" element={<RequireRole role={STAFF}><TeacherAccounts /></RequireRole>} />
             <Route path="/teacher/leaderboard" element={<RequireRole role={STAFF}><Leaderboard /></RequireRole>} />
             <Route path="/teacher/rewards" element={<RequireRole role={STAFF}><ManageRewards /></RequireRole>} />
+            <Route path="/teacher/grading" element={<RequireRole role={STAFF}><TeacherGrading /></RequireRole>} />
 
             <Route path="/admin" element={<RequireRole role="admin"><AdminPage /></RequireRole>} />
           </Routes>
         </ErrorBoundary>
-        <Footer />
+        <Footer/>
       </AuthProvider>
     </HashRouter>
   );

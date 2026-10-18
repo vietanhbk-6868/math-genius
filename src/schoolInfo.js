@@ -2,7 +2,7 @@
 export const SCHOOL = {
   name: "Trường THCS Huyền Tụng",      // Ví dụ: "Trường THCS Nguyễn Du"
   address: "Tổ 8A, phường Đức Xuân, tỉnh Thái Nguyên",   // Ví dụ: "12 Đường Lê Lợi, Phường 1, Quận 3, TP. Hồ Chí Minh"
-  phone: "0975 880",     // Ví dụ: "028 1234 5678"
+  phone: "0975 880 422",     // Ví dụ: "028 1234 5678"
   email: " c2ducxuan.pgdtxbackan@backan.edu.vn",     // Ví dụ: "thcs@example.edu.vn"
   website: "https://thcsducxuanbk.thainguyen.edu.vn/",   // Ví dụ: "https://thcs-nguyendu.edu.vn"
   hours: "Thứ Hai - Thứ Sáu: 7:00 - 17:00",     // Ví dụ: "Thứ Hai đến Thứ Sáu: 7:00 - 17:00"

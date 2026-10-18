@@ -60,6 +60,7 @@ export default function Navbar() {
               <NavLink to="/teacher" end>Câu hỏi</NavLink>
               <NavLink to="/teacher/dashboard">Tổng quan</NavLink>
               <NavLink to="/teacher/assignments">Giao bài</NavLink>
+              <NavLink to="/teacher/grading">Chấm tự luận</NavLink>
               <NavLink to="/teacher/grades">Bảng điểm</NavLink>
               <NavLink to="/teacher/accounts">Tài khoản</NavLink>
               <NavLink to="/teacher/leaderboard">Xếp hạng</NavLink>
